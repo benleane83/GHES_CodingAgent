@@ -1,0 +1,7 @@
+resources:
+  webhooks:
+    - webhook: WebHook
+      connection: IncomingWH
+
+steps:  
+- script: echo ${{ parameters.WebHook.resource.message.title }}
