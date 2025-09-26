@@ -1,7 +1,7 @@
 resources:
   webhooks:
     - webhook: WebHook
-      connection: IncomingWH
+      connection: GHCopilotWH
 
-steps:  
-- script: echo ${{ parameters.WebHook.resource.message.title }}
+steps:
+  - script: echo ${{ parameters.WebHook.resource.message.title }}
