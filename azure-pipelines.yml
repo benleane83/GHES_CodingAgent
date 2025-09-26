@@ -1,7 +1,99 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
 resources:
   webhooks:
     - webhook: WebHook
       connection: GHCopilotWH
 
 steps:
-  - script: echo ${{ parameters.WebHook.resource.message.title }}
+  - checkout: none
+
+  - pwsh: |
+      $payload = '$(resources.webhook.WebHook.data)'
+
+      if ([string]::IsNullOrWhiteSpace($payload)) {
+        Write-Error '⚠️ No payload received in the webhook trigger.'
+        exit 1
+      }
+
+      Write-Host '📥 Webhook payload (raw):'
+      Write-Host $payload
+
+      $workItemId = $null
+      $workItemUrl = $null
+      $workItemTitle = $null
+      $summaryPath = Join-Path (Get-Location) 'WebHookPayload.md'
+      $jsonPath = Join-Path (Get-Location) 'WebHookPayload.json'
+      $pretty = $null
+
+      try {
+        $json = $payload | ConvertFrom-Json -Depth 25
+        $pretty = $json | ConvertTo-Json -Depth 25
+        $pretty | Out-File -FilePath $jsonPath -Encoding utf8
+
+        $workItemId = $json.resource.id
+        $workItemUrl = $json.resource.url
+        $workItemTitle = $json.resource.fields.'System.Title'
+
+        if ($null -ne $workItemId) {
+          Write-Host "🆔 Work item ID: $workItemId"
+          Write-Host "##vso[task.setvariable variable=WorkItemId]$workItemId"
+        }
+
+        if ($null -ne $workItemUrl) {
+          Write-Host "🔗 Work item URL: $workItemUrl"
+          Write-Host "##vso[task.setvariable variable=WorkItemUrl]$workItemUrl"
+        }
+
+        if ($null -ne $workItemTitle) {
+          Write-Host "📝 Work item Title: $workItemTitle"
+          Write-Host "##vso[task.setvariable variable=WorkItemTitle]$workItemTitle"
+        }
+      }
+      catch {
+        Write-Warning "❔ Failed to convert payload to JSON: $_"
+        $payload | Out-File -FilePath $jsonPath -Encoding utf8
+      }
+
+      if (-not (Test-Path $jsonPath)) {
+        $payload | Out-File -FilePath $jsonPath -Encoding utf8
+      }
+
+      $summaryLines = @()
+      $summaryLines += "# Webhook payload 📦"
+      if ($null -ne $workItemId) { $summaryLines += "- 🆔 Work item ID: $workItemId" }
+      if ($null -ne $workItemUrl) { $summaryLines += "- 🔗 Work item URL: $workItemUrl" }
+      if ($null -ne $workItemTitle) { $summaryLines += "- 📝 Work item Title: $workItemTitle" }
+
+      if ($summaryLines.Count -eq 1) {
+        $summaryLines += '- ℹ️ No predefined fields could be extracted from the payload.'
+      }
+
+      if ($null -ne $pretty) {
+        $summaryLines += ''
+        $summaryLines += '## Payload JSON ✨'
+        $summaryLines += '``````json'
+        $summaryLines += $pretty
+        $summaryLines += '``````'
+      }
+      else {
+        $summaryLines += ''
+        $summaryLines += '## Raw payload 📄'
+        $summaryLines += '``````'
+        $summaryLines += $payload
+        $summaryLines += '``````'
+      }
+
+      $summaryLines | Out-File -FilePath $summaryPath -Encoding utf8
+      Write-Host "##vso[task.uploadsummary]$summaryPath"
+    displayName: Process webhook payload 📨
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publish webhook payload 📤
+    inputs:
+      targetPath: $(System.DefaultWorkingDirectory)/WebHookPayload.json
+      artifact: webhook-payload
+    condition: always()

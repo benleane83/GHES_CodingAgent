@@ -1,0 +1,22 @@
+### Create a new WebHook in Azure DevOps
+# Variables
+# <org_name>: Your Azure DevOps organization name
+# <WebHook Name>: The name of the WebHook you want to create
+# <api-version>: The API version to use (e.g., 6.0-preview)
+@org_name = "returngisorg"
+@WebHook_Name = "GHCopilotWHGHCopilotWH"
+
+
+###
+
+POST https://dev.azure.com/returngisorg/_apis/public/distributedtask/webhooks/GHCopilotWH?api-version=6.0-preview
+Content-Type: application/json
+
+{
+    "resource": {
+        "message": {
+            "title": "Hello, world!",
+            "subtitle": "I'm using WebHooks!"
+        }
+    }
+}
