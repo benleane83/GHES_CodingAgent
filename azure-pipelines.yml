@@ -12,9 +12,10 @@ steps:
   - checkout: none
 
   - bash: |
-      payload="$(resources.webhook.WebHook.data)"
+      # Access webhook data as parameter
+      payload='${{ parameters.WebHook }}'
 
-      if [ -z "$payload" ]; then
+      if [ -z "$payload" ] || [ "$payload" = "" ]; then
         echo "⚠️ No payload received in the webhook trigger."
         exit 1
       fi
