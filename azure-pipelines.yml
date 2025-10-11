@@ -95,6 +95,9 @@ steps:
     displayName: 🤖 Verify GitHub Copilot CLI Installation
     env:
       GH_TOKEN: $(GH_TOKEN)
+  - bash: |
+      cp mcp-config.json ~/.config/mcp-config.json
+    displayName: Copiar el archivo de los MCP servers en ~/.config
 
   - bash: |
       echo "🤖 Running GitHub Copilot CLI to test that it works"     
@@ -102,4 +105,3 @@ steps:
     displayName: 🤖 Probando MCP Server
     env:
       GH_TOKEN: $(GH_TOKEN)
-      XDG_CONFIG_HOME: ./mcp-config.json
