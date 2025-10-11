@@ -10,100 +10,107 @@ resources:
 
 steps:
   - checkout: none
+  - script: echo "🚀 Webhook triggered pipeline started!"
+    displayName: Starting message
 
   - bash: |
       # Access webhook data as parameter
       echo "🔔 Processing webhook payload..."
       echo ${{ parameters.WebHook }}
 
+  # - bash: |
+  #     # Access webhook data as parameter
+  #     echo "🔔 Processing webhook payload..."
+  #     echo ${{ parameters.WebHook }}
 
-      payload=${{ parameters.WebHook.message }}
 
-      if [ -z "$payload" ] || [ "$payload" = "" ]; then
-        echo "⚠️ No payload received in the webhook trigger."
-        exit 1
-      fi
+  #     payload=${{ parameters.WebHook.message }}
 
-      echo "📥 Webhook payload (raw):"
-      echo "$payload"
+  #     if [ -z "$payload" ] || [ "$payload" = "" ]; then
+  #       echo "⚠️ No payload received in the webhook trigger."
+  #       exit 1
+  #     fi
 
-      workItemId=""
-      workItemUrl=""
-      workItemTitle=""
-      summaryPath="$(pwd)/WebHookPayload.md"
-      jsonPath="$(pwd)/WebHookPayload.json"
+  #     echo "📥 Webhook payload (raw):"
+  #     echo "$payload"
 
-      # Try to pretty-print and extract fields
-      if echo "$payload" | jq . > /dev/null 2>&1; then
-        # Valid JSON - pretty print it
-        echo "$payload" | jq . > "$jsonPath"
+  #     workItemId=""
+  #     workItemUrl=""
+  #     workItemTitle=""
+  #     summaryPath="$(pwd)/WebHookPayload.md"
+  #     jsonPath="$(pwd)/WebHookPayload.json"
+
+  #     # Try to pretty-print and extract fields
+  #     if echo "$payload" | jq . > /dev/null 2>&1; then
+  #       # Valid JSON - pretty print it
+  #       echo "$payload" | jq . > "$jsonPath"
         
-        # Extract work item fields
-        workItemId=$(echo "$payload" | jq -r '.resource.id // empty' 2>/dev/null)
-        workItemUrl=$(echo "$payload" | jq -r '.resource.url // empty' 2>/dev/null)
-        workItemTitle=$(echo "$payload" | jq -r '.resource.fields."System.Title" // empty' 2>/dev/null)
+  #       # Extract work item fields
+  #       workItemId=$(echo "$payload" | jq -r '.resource.id // empty' 2>/dev/null)
+  #       workItemUrl=$(echo "$payload" | jq -r '.resource.url // empty' 2>/dev/null)
+  #       workItemTitle=$(echo "$payload" | jq -r '.resource.fields."System.Title" // empty' 2>/dev/null)
 
-        if [ -n "$workItemId" ]; then
-          echo "🆔 Work item ID: $workItemId"
-          echo "##vso[task.setvariable variable=WorkItemId]$workItemId"
-        fi
+  #       if [ -n "$workItemId" ]; then
+  #         echo "🆔 Work item ID: $workItemId"
+  #         echo "##vso[task.setvariable variable=WorkItemId]$workItemId"
+  #       fi
 
-        if [ -n "$workItemUrl" ]; then
-          echo "🔗 Work item URL: $workItemUrl"
-          echo "##vso[task.setvariable variable=WorkItemUrl]$workItemUrl"
-        fi
+  #       if [ -n "$workItemUrl" ]; then
+  #         echo "🔗 Work item URL: $workItemUrl"
+  #         echo "##vso[task.setvariable variable=WorkItemUrl]$workItemUrl"
+  #       fi
 
-        if [ -n "$workItemTitle" ]; then
-          echo "📝 Work item Title: $workItemTitle"
-          echo "##vso[task.setvariable variable=WorkItemTitle]$workItemTitle"
-        fi
-      else
-        # Invalid JSON - save raw payload
-        echo "⚠️ Warning: Failed to parse payload as JSON"
-        echo "$payload" > "$jsonPath"
-      fi
+  #       if [ -n "$workItemTitle" ]; then
+  #         echo "📝 Work item Title: $workItemTitle"
+  #         echo "##vso[task.setvariable variable=WorkItemTitle]$workItemTitle"
+  #       fi
+  #     else
+  #       # Invalid JSON - save raw payload
+  #       echo "⚠️ Warning: Failed to parse payload as JSON"
+  #       echo "$payload" > "$jsonPath"
+  #     fi
 
-      # Create summary markdown
-      {
-        echo "# Webhook payload 📦"
+  #     # Create summary markdown
+  #     {
+  #       echo "# Webhook payload 📦"
         
-        if [ -n "$workItemId" ]; then
-          echo "- 🆔 Work item ID: $workItemId"
-        fi
+  #       if [ -n "$workItemId" ]; then
+  #         echo "- 🆔 Work item ID: $workItemId"
+  #       fi
         
-        if [ -n "$workItemUrl" ]; then
-          echo "- 🔗 Work item URL: $workItemUrl"
-        fi
+  #       if [ -n "$workItemUrl" ]; then
+  #         echo "- 🔗 Work item URL: $workItemUrl"
+  #       fi
         
-        if [ -n "$workItemTitle" ]; then
-          echo "- 📝 Work item Title: $workItemTitle"
-        fi
+  #       if [ -n "$workItemTitle" ]; then
+  #         echo "- 📝 Work item Title: $workItemTitle"
+  #       fi
         
-        if [ -z "$workItemId" ] && [ -z "$workItemUrl" ] && [ -z "$workItemTitle" ]; then
-          echo "- ℹ️ No predefined fields could be extracted from the payload."
-        fi
+  #       if [ -z "$workItemId" ] && [ -z "$workItemUrl" ] && [ -z "$workItemTitle" ]; then
+  #         echo "- ℹ️ No predefined fields could be extracted from the payload."
+  #       fi
         
-        echo ""
+  #       echo ""
         
-        if [ -s "$jsonPath" ] && jq . "$jsonPath" > /dev/null 2>&1; then
-          echo "## Payload JSON ✨"
-          echo '```json'
-          cat "$jsonPath"
-          echo '```'
-        else
-          echo "## Raw payload 📄"
-          echo '```'
-          echo "$payload"
-          echo '```'
-        fi
-      } > "$summaryPath"
+  #       if [ -s "$jsonPath" ] && jq . "$jsonPath" > /dev/null 2>&1; then
+  #         echo "## Payload JSON ✨"
+  #         echo '```json'
+  #         cat "$jsonPath"
+  #         echo '```'
+  #       else
+  #         echo "## Raw payload 📄"
+  #         echo '```'
+  #         echo "$payload"
+  #         echo '```'
+  #       fi
+  #     } > "$summaryPath"
 
-      echo "##vso[task.uploadsummary]$summaryPath"
-    displayName: Process webhook payload 📨
+  #     echo "##vso[task.uploadsummary]$summaryPath"
+  #   displayName: Process webhook payload 📨
 
-  - task: PublishPipelineArtifact@1
-    displayName: Publish webhook payload 📤
-    inputs:
-      targetPath: $(System.DefaultWorkingDirectory)/WebHookPayload.json
-      artifact: webhook-payload
-    condition: always()
+  # - task: PublishPipelineArtifact@1
+  #   displayName: Publish webhook payload 📤
+  #   inputs:
+  #     targetPath: $(System.DefaultWorkingDirectory)/WebHookPayload.json
+  #     artifact: webhook-payload
+  #   condition: always()
