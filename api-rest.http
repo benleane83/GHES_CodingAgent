@@ -4,13 +4,13 @@
 # <webhook_id>: The identifier (GUID) shown in the WebHook URL
 # <api-version>: The API version to use (e.g., 6.0-preview)
 @org_name = "returngisorg"
-@webhook_id = "<replace-with-webhook-guid>"
+@webhook_id = "GHCopilotWH"
 @api_version = "7.1-preview.1"
 
 
 ###
 
-POST https://dev.azure.com/{{org_name}}/_apis/public/distributedtask/webhooks/{{webhook_id}}?api-version={{api_version}}
+POST https://dev.azure.com/returngisorg/_apis/public/distributedtask/webhooks/GHCopilotWH?api-version=7.1-preview.1
 Content-Type: application/json; charset=utf-8
 # Authorization: Basic {{base64Credentials}}    # Uncomment and set if your webhook uses basic auth
 # X-Webhook-Secret: {{yourSecret}}               # Uncomment and set if your webhook expects a custom secret header
