@@ -81,13 +81,13 @@ steps:
     displayName: Display webhook information 📊
 
   - bash: |
-      npm install -g @github/copilot
+      npm install -g @github/copilot     
     displayName: 🤖 Install GitHub Copilot CLI 
   
-  - bash: |
-      # Example usage of GitHub Copilot CLI
-      copilot --help
-    displayName: 🤖 Verify GitHub Copilot CLI Installation
+  # - bash: |
+  #     # Example usage of GitHub Copilot CLI
+  #     copilot --help
+  #   displayName: 🤖 Verify GitHub Copilot CLI Installation
 
   - bash: |
       echo "🤖 Running GitHub Copilot CLI to test that it works"     
@@ -101,9 +101,11 @@ steps:
 
   - bash: |
       echo "🤖 Running GitHub Copilot CLI to test that it works"
-      copilot --log-level debug
-      copilot --log-dir ./logs
-      copilot -p "get my work items for project GitHub Copilot CLI" --allow-all-tools
+      copilot \
+      -p "get my work items for project GitHub Copilot CLI" \
+      --allow-all-tools \
+      --log-level debug \
+      --log-dir ./logs
     displayName: 🤖 Probando MCP Server
     env:
       GH_TOKEN: $(GH_TOKEN)
