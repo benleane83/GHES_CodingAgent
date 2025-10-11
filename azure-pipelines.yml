@@ -13,7 +13,11 @@ steps:
 
   - bash: |
       # Access webhook data as parameter
-      payload='${{ parameters.WebHook }}'
+      echo "🔔 Processing webhook payload..."
+      echo ${{ parameters.WebHook }}
+
+
+      payload=${{ parameters.WebHook.message }}
 
       if [ -z "$payload" ] || [ "$payload" = "" ]; then
         echo "⚠️ No payload received in the webhook trigger."
