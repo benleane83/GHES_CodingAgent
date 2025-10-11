@@ -5,7 +5,7 @@ pool:
 
 resources:
   webhooks:
-    - webhook: GHCopilotWebHook
+    - webhook: myWebhookResource
       connection: GHCopilotWH
 
 steps:
@@ -16,7 +16,8 @@ steps:
   - bash: |
       # Access webhook data as parameter
       echo "🔔 Processing webhook payload..."
-      echo ${{ parameters.GHCopilotWebHook }}
+      echo Message: ${{ parameters.myWebhookResource.message }}
+      echo Subscription ID: ${{ parameters.myWebhookResource.subscriptionId }}
 
   # - bash: |
   #     # Access webhook data as parameter
