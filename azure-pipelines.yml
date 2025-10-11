@@ -16,8 +16,27 @@ steps:
   - bash: |
       # Access webhook data as parameter
       echo "🔔 Processing webhook payload..."
-      echo Message: ${{ parameters.myWebhookResource.message }}
-      echo Subscription ID: ${{ parameters.myWebhookResource.subscriptionId }}
+      echo "═══════════════════════════════════════════════════════════"
+      echo "📋 WEBHOOK INFORMATION"
+      echo "═══════════════════════════════════════════════════════════"
+      echo ""
+      echo "🔖 Event Type: ${{ parameters.myWebhookResource.eventType }}"
+      echo "🆔 Subscription ID: ${{ parameters.myWebhookResource.subscriptionId }}"
+      echo "🔑 Notification ID: ${{ parameters.myWebhookResource.notificationId }}"
+      echo "🎯 Event ID: ${{ parameters.myWebhookResource.id }}"
+      echo "📡 Publisher ID: ${{ parameters.myWebhookResource.publisherId }}"
+      echo "📅 Created Date: ${{ parameters.myWebhookResource.createdDate }}"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+      echo "🗂️  RESOURCE CONTAINERS"
+      echo "═══════════════════════════════════════════════════════════"
+      echo ""
+      echo "📦 Collection ID: ${{ parameters.myWebhookResource.resourceContainers.collection.id }}"
+      echo "🏢 Account ID: ${{ parameters.myWebhookResource.resourceContainers.account.id }}"
+      echo "📁 Project ID: ${{ parameters.myWebhookResource.resourceContainers.project.id }}"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+    displayName: Display webhook information 📊
 
   # - bash: |
   #     # Access webhook data as parameter
