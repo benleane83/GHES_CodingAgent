@@ -1,0 +1,81 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+resources:
+  webhooks:
+    - webhook: myWebhookResource
+      connection: WorkItemWebHook
+
+steps:
+  - checkout: none
+  - script: echo "🚀 Webhook triggered pipeline started!"
+    displayName: Starting message
+
+  - bash: |
+      # Access webhook data as parameter
+      echo "🔔 Processing webhook payload..."
+      echo "═══════════════════════════════════════════════════════════"
+      echo "📋 WEBHOOK INFORMATION"
+      echo "═══════════════════════════════════════════════════════════"
+      echo ""
+      echo "🔖 Event Type: ${{ parameters.myWebhookResource.eventType }}"
+      echo "🆔 Subscription ID: ${{ parameters.myWebhookResource.subscriptionId }}"
+      echo "🔑 Notification ID: ${{ parameters.myWebhookResource.notificationId }}"
+      echo "🎯 Event ID: ${{ parameters.myWebhookResource.id }}"
+      echo "📡 Publisher ID: ${{ parameters.myWebhookResource.publisherId }}"
+      echo "📅 Created Date: ${{ parameters.myWebhookResource.createdDate }}"
+      echo "🔢 Resource Version: ${{ parameters.myWebhookResource.resourceVersion }}"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+      echo "💬 MESSAGE"
+      echo "═══════════════════════════════════════════════════════════"
+      echo ""
+      echo "${{ parameters.myWebhookResource.message.text }}"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+      echo "📝 WORK ITEM DETAILS (from webhook)"
+      echo "═══════════════════════════════════════════════════════════"
+      echo ""
+      echo "🆔 Work Item ID: ${{ parameters.myWebhookResource.resource.id }}"
+      echo "🔄 Revision: ${{ parameters.myWebhookResource.resource.rev }}"
+      echo "📌 Title: ${{ parameters.myWebhookResource.resource.fields['System.Title'] }}"
+      echo "🏷️  Type: ${{ parameters.myWebhookResource.resource.fields['System.WorkItemType'] }}"
+      echo "📊 State: ${{ parameters.myWebhookResource.resource.fields['System.State'] }}"
+      echo "❓ Reason: ${{ parameters.myWebhookResource.resource.fields['System.Reason'] }}"
+      echo "🎯 Priority: ${{ parameters.myWebhookResource.resource.fields['Microsoft.VSTS.Common.Priority'] }}"
+      echo ""
+      echo "📄 Description:"
+      echo "${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
+      echo ""
+      echo "👤 Created By: ${{ parameters.myWebhookResource.resource.fields['System.CreatedBy'] }}"
+      echo "📅 Created Date: ${{ parameters.myWebhookResource.resource.fields['System.CreatedDate'] }}"
+      echo ""
+      echo "👥 Assigned To: ${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'] }}"
+      echo ""
+      echo "🔄 Changed By: ${{ parameters.myWebhookResource.resource.fields['System.ChangedBy'] }}"
+      echo "📅 Changed Date: ${{ parameters.myWebhookResource.resource.fields['System.ChangedDate'] }}"
+      echo ""
+      echo "📂 Area Path: ${{ parameters.myWebhookResource.resource.fields['System.AreaPath'] }}"
+      echo "🔁 Iteration Path: ${{ parameters.myWebhookResource.resource.fields['System.IterationPath'] }}"
+      echo "📁 Team Project: ${{ parameters.myWebhookResource.resource.fields['System.TeamProject'] }}"
+      echo ""
+      echo "⚠️  Severity: ${{ parameters.myWebhookResource.resource.fields['Microsoft.VSTS.Common.Severity'] }}"
+      echo "📋 Kanban Column: ${{ parameters.myWebhookResource.resource.fields['WEF_EB329F44FE5F4A94ACB1DA153FDF38BA_Kanban.Column'] }}"
+      echo ""
+      echo "🔗 Work Item URL: ${{ parameters.myWebhookResource.resource.url }}"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+      
+      # Set pipeline variables for later use
+      echo "##vso[task.setvariable variable=WorkItemId]${{ parameters.myWebhookResource.resource.id }}"
+      echo "##vso[task.setvariable variable=WorkItemTitle]${{ parameters.myWebhookResource.resource.fields['System.Title'] }}"
+      echo "##vso[task.setvariable variable=WorkItemType]${{ parameters.myWebhookResource.resource.fields['System.WorkItemType'] }}"
+      echo "##vso[task.setvariable variable=WorkItemState]${{ parameters.myWebhookResource.resource.fields['System.State'] }}"
+      echo "##vso[task.setvariable variable=WorkItemCreatedBy]${{ parameters.myWebhookResource.resource.fields['System.CreatedBy'] }}"
+      echo "##vso[task.setvariable variable=WorkItemAssignedTo]${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'] }}"
+      echo "##vso[task.setvariable variable=WorkItemDescription]${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
+    displayName: Display webhook information 📊
+
+ 
