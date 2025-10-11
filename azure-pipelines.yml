@@ -16,7 +16,7 @@ steps:
   - bash: |
       # Access webhook data as parameter
       echo "🔔 Processing webhook payload..."
-      echo ${{ parameters.WebHook }}
+      echo ${{ parameters.WebHook.message }}
 
   # - bash: |
   #     # Access webhook data as parameter
