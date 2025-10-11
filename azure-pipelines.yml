@@ -96,8 +96,8 @@ steps:
     env:
       GH_TOKEN: $(GH_TOKEN)
   - bash: |
-      cp mcp-config.json ~/.config/mcp-config.json
-    displayName: Copiar el archivo de los MCP servers en ~/.config
+      cp mcp-config.json ~/.copilot/mcp-config.json
+    displayName: Copiar el archivo de los MCP servers en ~/.copilot
 
   - bash: |
       echo "🤖 Running GitHub Copilot CLI to test that it works"
@@ -109,10 +109,10 @@ steps:
     displayName: 🤖 Probando MCP Server
     env:
       GH_TOKEN: $(GH_TOKEN)
+      AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
-  - bash: |
-      echo "Publish logs as pipeline artifact"
-      mkdir -p $(Build.ArtifactStagingDirectory)/logs
-      cp -r ./logs/* $(Build.ArtifactStagingDirectory)/logs/
-      echo "Logs copied to $(Build.ArtifactStagingDirectory)/logs/"
-    displayName: Copy logs to artifact staging directory
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: 'logs'
+      artifact: 'copilot-logs'
+    displayName: 📁 Publish logs as pipeline artifact

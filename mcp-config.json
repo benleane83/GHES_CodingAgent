@@ -6,7 +6,9 @@
             "args": [
                 "-y",
                 "@azure-devops/mcp",
-                "returngisorg"
+                "returngisorg",
+                "--authorization",
+                "env"
             ],
             "tools": [
                 "*"
