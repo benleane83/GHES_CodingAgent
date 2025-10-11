@@ -38,6 +38,64 @@ steps:
       echo "═══════════════════════════════════════════════════════════"
     displayName: Display webhook information 📊
 
+  - bash: |
+      echo "🔍 Fetching Work Item details using Azure DevOps CLI..."
+      echo ""
+      
+      # Note: Azure DevOps CLI is pre-installed on Microsoft-hosted agents
+      # The System.AccessToken is automatically available
+      
+      # Get the work item ID from the webhook resource (if available)
+      # For workitem.created events, we may need to extract it from resource
+      
+      # Configure Azure DevOps CLI with the organization
+      export AZURE_DEVOPS_EXT_PAT=$(System.AccessToken)
+      az devops configure --defaults organization=https://dev.azure.com/returngisorg project=be9b3917-87e6-42a4-a549-2bc06a7a878f
+      
+      # Try to get work item ID from resource.id (adjust based on actual payload structure)
+      workItemId="${{ parameters.myWebhookResource.resource.id }}"
+      
+      if [ -z "$workItemId" ] || [ "$workItemId" = "" ]; then
+        echo "⚠️ Work Item ID not found in webhook payload"
+        echo "📋 Webhook may not contain resource data for this event type"
+        exit 0
+      fi
+      
+      echo "🆔 Work Item ID: $workItemId"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+      echo "📝 WORK ITEM DETAILS"
+      echo "═══════════════════════════════════════════════════════════"
+      
+      # Get work item details in JSON format
+      workItemJson=$(az boards work-item show --id "$workItemId" --output json)
+      
+      # Extract and display key fields
+      echo ""
+      echo "📌 Title: $(echo "$workItemJson" | jq -r '.fields."System.Title"')"
+      echo "📊 State: $(echo "$workItemJson" | jq -r '.fields."System.State"')"
+      echo "🏷️  Work Item Type: $(echo "$workItemJson" | jq -r '.fields."System.WorkItemType"')"
+      echo "👤 Created By: $(echo "$workItemJson" | jq -r '.fields."System.CreatedBy".displayName')"
+      echo "📅 Created Date: $(echo "$workItemJson" | jq -r '.fields."System.CreatedDate"')"
+      echo "👥 Assigned To: $(echo "$workItemJson" | jq -r '.fields."System.AssignedTo".displayName // "Unassigned"')"
+      echo "📝 Description: $(echo "$workItemJson" | jq -r '.fields."System.Description" // "No description"')"
+      echo "🔗 URL: $(echo "$workItemJson" | jq -r '.url')"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+      
+      # Save full work item details to file
+      echo "$workItemJson" | jq . > "$(System.DefaultWorkingDirectory)/WorkItemDetails.json"
+      echo "💾 Full work item details saved to WorkItemDetails.json"
+      
+      # Set variables for later use
+      echo "##vso[task.setvariable variable=WorkItemId]$workItemId"
+      echo "##vso[task.setvariable variable=WorkItemTitle]$(echo "$workItemJson" | jq -r '.fields."System.Title"')"
+      echo "##vso[task.setvariable variable=WorkItemAssignedTo]$(echo "$workItemJson" | jq -r '.fields."System.AssignedTo".displayName // "Unassigned"')"
+      
+    displayName: Get Work Item details with Azure DevOps CLI 🔎
+    env:
+      AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
   # - bash: |
   #     # Access webhook data as parameter
   #     echo "🔔 Processing webhook payload..."
