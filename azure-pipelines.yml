@@ -97,3 +97,10 @@ steps:
     env:
       GH_TOKEN: $(GH_TOKEN)
 
+  - bash: |
+      echo "🤖 Running GitHub Copilot CLI to test that it works"     
+      copilot -p "Dime los work items del Proyecto GitHub Copilot CLI" --allow-all-tools
+    displayName: 🤖 Probando MCP Server
+    env:
+      GH_TOKEN: $(GH_TOKEN)
+      XDG_CONFIG_HOME: ./mcp-config.json
