@@ -8,10 +8,13 @@ resources:
     - webhook: myWebhookResource
       connection: GHCopilotWH
 
+variables:
+  - group: 'GitHub Copilot CLI'
+
 steps:
   - checkout: none
   - script: echo "🚀 Webhook triggered pipeline started!"
-    displayName: Starting message
+    displayName: 🚀 Webhook triggered
 
   - bash: |
       # Access webhook data as parameter
@@ -78,4 +81,17 @@ steps:
       echo "##vso[task.setvariable variable=WorkItemDescription]${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
     displayName: Display webhook information 📊
 
- 
+  - bash: |
+      npm install -g @github/copilot
+    displayName: 🤖 Install GitHub Copilot CLI 
+  
+  - bash: |
+      # Example usage of GitHub Copilot CLI
+      copilot --help
+    displayName: 🤖 Verify GitHub Copilot CLI Installation
+
+  - bash: |
+      echo "🤖 Running GitHub Copilot CLI to test that it works"     
+      copilot -p "Puedes decirme de qué trata este proyecto" --allow-all-tools
+    displayName: 🤖 Verify GitHub Copilot CLI Installation
+
