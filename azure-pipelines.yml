@@ -12,7 +12,6 @@ variables:
   - group: 'GitHub Copilot CLI'
 
 steps:
-  - checkout: none
   - script: echo "🚀 Webhook triggered pipeline started!"
     displayName: 🚀 Webhook triggered
 
