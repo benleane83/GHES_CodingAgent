@@ -16,25 +16,25 @@ This directory contains scripts for interacting with Azure DevOps work items and
 - `add-required-reviewer.sh` - Add required reviewers to existing PRs
 - `pipeline-create-pr.sh` - Pipeline-specific PR creation
 
-### Linking (Azure Boards CLI)
-- `link-branch-to-workitem.sh` - Link Git branches to work items using Azure Boards CLI
-- `link-pr-to-workitem.sh` - Link Pull Requests to work items using Azure Boards CLI
+### Linking (Azure DevOps REST API)
+- `link-branch-to-workitem.sh` - Link Git branches to work items using Azure DevOps REST API
+- `link-pr-to-workitem.sh` - Link Pull Requests to work items using Azure DevOps REST API
 
 ### Testing
 - `test-full-workflow.sh` - Test the complete workflow
 - `test-scripts-manual.sh` - Interactive manual testing
 - `validate-all-scripts.sh` - Automated validation
 
-## 🔗 Linking Work Items with Azure Boards CLI
+## 🔗 Linking Work Items with Azure DevOps REST API
 
-The linking scripts use **Azure Boards CLI** (`az boards`) instead of direct REST API calls for more reliable and maintainable work item linking.
+The linking scripts use **Azure DevOps REST API** for reliable work item artifact linking. While Azure CLI is used to get repository and project IDs, the actual linking is done via REST API because `az boards work-item relation` only supports work item relations (parent/child), not artifact links (branches/PRs).
 
-### Why Azure Boards CLI?
+### Why REST API for Linking?
 
-✅ **More reliable** - Official Azure CLI tool with better error handling  
-✅ **Simpler code** - No need to construct complex artifact URIs manually  
-✅ **Better maintained** - Microsoft maintains the CLI, updates are automatic  
-✅ **Type-safe** - CLI validates parameters before making API calls
+✅ **Direct artifact support** - `ArtifactLink` relation type is only available via REST API  
+✅ **Azure CLI for metadata** - We use `az repos show` and `az devops project show` to get IDs  
+✅ **Proper URI format** - Correct vstfs:// URIs for branches and PRs  
+✅ **Better error handling** - HTTP status codes and response bodies for debugging
 
 ### Link a Branch to a Work Item
 
@@ -65,12 +65,16 @@ export AZURE_DEVOPS_PAT="your-pat-token"
 Both scripts:
 1. Get the repository ID using `az repos show`
 2. Get the project ID using `az devops project show`
-3. Construct the appropriate artifact URI:
-   - Branch: `vstfs:///Git/Ref/{ProjectId}/{RepositoryId}/GB{BranchName}`
-   - PR: `vstfs:///Git/PullRequestId/{ProjectId}/{RepositoryId}/{PullRequestId}`
-4. Link using `az boards work-item relation add`
+3. Construct the appropriate artifact URI with URL encoding:
+   - Branch: `vstfs:///Git/Ref/{ProjectId}%2F{RepositoryId}%2FGB{BranchName}`
+     - `GB` = Git Branch prefix
+     - `%2F` = URL-encoded separator (instead of `/`)
+     - Branch slashes are also encoded (e.g., `copilot/123` → `copilot%2F123`)
+   - PR: `vstfs:///Git/PullRequestId/{ProjectId}%2F{RepositoryId}%2F{PullRequestId}`
+     - All separators use `%2F` encoding
+4. Link using REST API PATCH request to work items endpoint
 
-The Azure CLI handles authentication, retries, and error handling automatically.
+The REST API uses the `ArtifactLink` relation type which is specifically designed for linking branches, PRs, and other artifacts to work items.
 
 ## 🧪 Testing the Scripts
 

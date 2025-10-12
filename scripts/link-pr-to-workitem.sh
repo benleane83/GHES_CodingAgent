@@ -66,8 +66,9 @@ fi
 echo "✅ Project ID: $PROJECT_ID"
 
 # Create the artifact URI for the Pull Request
-# Format: vstfs:///Git/PullRequestId/{ProjectId}/{RepositoryId}/{PullRequestId}
-ARTIFACT_URI="vstfs:///Git/PullRequestId/${PROJECT_ID}/${REPO_ID}/${PR_ID}"
+# Format: vstfs:///Git/PullRequestId/{ProjectId}%2F{RepositoryId}%2F{PullRequestId}
+# Note: Separators must be URL-encoded as %2F
+ARTIFACT_URI="vstfs:///Git/PullRequestId/${PROJECT_ID}%2F${REPO_ID}%2F${PR_ID}"
 
 echo "🔗 Artifact URI: $ARTIFACT_URI"
 

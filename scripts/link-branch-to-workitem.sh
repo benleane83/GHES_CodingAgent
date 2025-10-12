@@ -66,8 +66,10 @@ fi
 echo "✅ Project ID: $PROJECT_ID"
 
 # Create the artifact URI for the branch
-# Format: vstfs:///Git/Ref/{ProjectId}/{RepositoryId}/refs/heads/{BranchName}
-ARTIFACT_URI="vstfs:///Git/Ref/${PROJECT_ID}/${REPO_ID}/refs/heads/${BRANCH_NAME}"
+# Format: vstfs:///Git/Ref/{ProjectId}%2F{RepositoryId}%2FGB{BranchName}
+# Note: Separators must be URL-encoded as %2F, and branch prefix is GB (Git Branch)
+ENCODED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/\//%2F/g')
+ARTIFACT_URI="vstfs:///Git/Ref/${PROJECT_ID}%2F${REPO_ID}%2FGB${ENCODED_BRANCH}"
 
 echo "🔗 Artifact URI: $ARTIFACT_URI"
 

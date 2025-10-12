@@ -169,7 +169,7 @@ steps:
     displayName: 🌿 Step 3 - Create Feature Branch
 
   - bash: |
-      echo "🔗 Linking branch to work item using Azure Boards CLI..."
+      echo "🔗 Linking branch to work item using REST API..."
       $(PipelineScriptsDir)/link-branch-to-workitem.sh \
         $(WorkItemId) \
         "$(ProjectName)" \
@@ -336,7 +336,7 @@ steps:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   - bash: |
-      echo "🔗 Linking Pull Request to work item using Azure Boards CLI..."
+      echo "🔗 Linking Pull Request to work item using REST API..."
       $(PipelineScriptsDir)/link-pr-to-workitem.sh \
         $(WorkItemId) \
         "$(ProjectName)" \
