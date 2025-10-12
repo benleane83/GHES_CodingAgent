@@ -111,11 +111,15 @@ steps:
       if [ "$(TargetRepoName)" != "$(Build.Repository.Name)" ]; then
         echo "Cloning target repository: $(TargetRepoName)"
         
+        # Extract organization from collection URI
+        ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+        
         # URL encode the project name and repository name
         PROJECT_ENCODED=$(printf '%s' "$(ProjectName)" | jq -sRr @uri | tr -d '\n')
         REPO_ENCODED=$(printf '%s' "$(TargetRepoName)" | jq -sRr @uri | tr -d '\n')
         
-        git clone "$(System.CollectionUri)${PROJECT_ENCODED}/_git/${REPO_ENCODED}" target-repo
+        # Clone with authentication
+        git clone "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/${ORG}/${PROJECT_ENCODED}/_git/${REPO_ENCODED}" target-repo
         cd target-repo
         git config user.email "copilot-cli@azure.com"
         git config user.name "GitHub Copilot CLI"
@@ -127,6 +131,8 @@ steps:
       fi
       echo "##vso[task.setvariable variable=TargetRepoDir]$(System.DefaultWorkingDirectory)/target-repo"
     displayName: 🛎️ Clone Target Repository
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   - bash: |
       npm install -g @github/copilot
