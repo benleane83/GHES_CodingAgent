@@ -169,19 +169,7 @@ steps:
     displayName: 🌿 Step 3 - Create Feature Branch
 
   - bash: |
-      echo "🔗 Linking branch to work item using REST API..."
-      $(PipelineScriptsDir)/link-branch-to-workitem.sh \
-        $(WorkItemId) \
-        "$(ProjectName)" \
-        "$(TargetRepoName)" \
-        "copilot/$(WorkItemId)"
-    displayName: 🔗 Step 3.1 - Link Branch to Work Item
-    env:
-      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
-
-
-  - bash: |
-      echo "�👤 Assigning work item to GitHub Copilot CLI..."
+      echo " Assigning work item to GitHub Copilot CLI..."
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
       $(PipelineScriptsDir)/assign-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "GitHub Copilot CLI"
     displayName: 👤 Step 4 - Assign Work Item to GitHub Copilot
@@ -290,7 +278,18 @@ steps:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   - bash: |
-      echo "🔧 Updating work item activity..."
+      echo "🔗 Linking branch to work item using REST API..."
+      $(PipelineScriptsDir)/link-branch-to-workitem.sh \
+        $(WorkItemId) \
+        "$(ProjectName)" \
+        "$(TargetRepoName)" \
+        "copilot/$(WorkItemId)"
+    displayName: 🔗 Step 8.1 - Link Branch to Work Item
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🔧 Updating work item activity...""
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
       $(PipelineScriptsDir)/update-workitem-activity.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Development"
     displayName: 🔧 Step 9 - Update Activity
