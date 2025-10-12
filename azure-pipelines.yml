@@ -169,7 +169,37 @@ steps:
     displayName: 🌿 Step 3 - Create Feature Branch
 
   - bash: |
-      echo "👤 Assigning work item to GitHub Copilot CLI..."
+      echo "� Linking branch to work item..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      
+      # Get repository ID
+      REPO_ID=$(curl -s -u ":${AZURE_DEVOPS_PAT}" \
+        "https://dev.azure.com/${ORG}/$(ProjectName)/_apis/git/repositories/$(TargetRepoName)?api-version=7.1" \
+        | jq -r '.id')
+      
+      # Get project ID
+      PROJECT_ID=$(curl -s -u ":${AZURE_DEVOPS_PAT}" \
+        "https://dev.azure.com/${ORG}/_apis/projects/$(ProjectName)?api-version=7.1" \
+        | jq -r '.id')
+      
+      # Create artifact link URL for the branch
+      BRANCH_NAME="copilot/$(WorkItemId)"
+      ARTIFACT_URL="vstfs:///Git/Ref/${PROJECT_ID}%2F${REPO_ID}%2FGB${BRANCH_NAME//\//%2F}"
+      
+      # Link branch to work item
+      curl -s -u ":${AZURE_DEVOPS_PAT}" \
+        -X PATCH \
+        -H "Content-Type: application/json-patch+json" \
+        -d "[{\"op\":\"add\",\"path\": \"/relations/-\",\"value\":{\"rel\":\"ArtifactLink\",\"url\":\"${ARTIFACT_URL}\",\"attributes\":{\"name\":\"Branch\"}}}]" \
+        "https://dev.azure.com/${ORG}/$(ProjectName)/_apis/wit/workitems/$(WorkItemId)?api-version=7.1"
+      
+      echo "✅ Branch linked to work item"
+    displayName: 🔗 Step 3.1 - Link Branch to Work Item
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "�👤 Assigning work item to GitHub Copilot CLI..."
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
       $(PipelineScriptsDir)/assign-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "GitHub Copilot CLI"
     displayName: 👤 Step 4 - Assign Work Item to GitHub Copilot
@@ -301,7 +331,8 @@ steps:
       # Get target branch (default to main)
       TARGET_BRANCH="main"
 
-      $(PipelineScriptsDir)/create-pr-with-required-reviewer.sh \
+      # Capture the PR_ID from the script output (last line)
+      PR_OUTPUT=$($(PipelineScriptsDir)/create-pr-with-required-reviewer.sh \
         "$ORG" \
         "$(ProjectName)" \
         "$(TargetRepoName)" \
@@ -309,13 +340,45 @@ steps:
         "$TARGET_BRANCH" \
         "$(WorkItemTitle)" \
         "$PR_DESCRIPTION" \
-        "$(CreatorEmail)"
-
+        "$(CreatorEmail)")
+      
+      PR_ID=$(echo "$PR_OUTPUT" | tail -n 1)
       echo "✅ Pull Request created successfully"
+      echo "✅ PR ID: $PR_ID"
 
-      # Store PR URL for the next step
-      echo "##vso[task.setvariable variable=PrUrl]https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(TargetRepoName)/pullrequest"
+      # Store PR ID and URL for the next steps
+      echo "##vso[task.setvariable variable=PrId]$PR_ID"
+      echo "##vso[task.setvariable variable=PrUrl]https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(TargetRepoName)/pullrequest/${PR_ID}"
     displayName: 📬 Step 10 - Create Pull Request
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🔗 Linking Pull Request to work item..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      
+      # Get repository ID
+      REPO_ID=$(curl -s -u ":${AZURE_DEVOPS_PAT}" \
+        "https://dev.azure.com/${ORG}/$(ProjectName)/_apis/git/repositories/$(TargetRepoName)?api-version=7.1" \
+        | jq -r '.id')
+      
+      # Get project ID
+      PROJECT_ID=$(curl -s -u ":${AZURE_DEVOPS_PAT}" \
+        "https://dev.azure.com/${ORG}/_apis/projects/$(ProjectName)?api-version=7.1" \
+        | jq -r '.id')
+      
+      # Create artifact link URL for the PR
+      ARTIFACT_URL="vstfs:///Git/PullRequestId/${PROJECT_ID}%2F${REPO_ID}%2F$(PrId)"
+      
+      # Link PR to work item
+      curl -s -u ":${AZURE_DEVOPS_PAT}" \
+        -X PATCH \
+        -H "Content-Type: application/json-patch+json" \
+        -d "[{\"op\":\"add\",\"path\":\"/relations/-\",\"value\":{\"rel\":\"ArtifactLink\",\"url\":\"${ARTIFACT_URL}\",\"attributes\":{\"name\":\"Pull Request\"}}}]" \
+        "https://dev.azure.com/${ORG}/$(ProjectName)/_apis/wit/workitems/$(WorkItemId)?api-version=7.1"
+      
+      echo "✅ Pull Request linked to work item"
+    displayName: 🔗 Step 10.1 - Link Pull Request to Work Item
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
@@ -327,7 +390,7 @@ steps:
       CREATOR_DISPLAY_NAME=$(echo "$(WorkItemCreatedBy)" | sed 's/<.*//' | xargs)
       
       # Create a rich comment with the completion status and mention
-      COMMENT="@${CREATOR_DISPLAY_NAME} ✅🤖 <b>GitHub Copilot</b> has completed the implementation<br/><br/>✨ The changes have been implemented and are ready for review.<br/>📬 A Pull Request has been created with the requested changes.<br/><br/>🔗 <a href='https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(TargetRepoName)/pullrequest'>View Pull Request</a>"
+      COMMENT="@${CREATOR_DISPLAY_NAME} ✅🤖 <b>GitHub Copilot</b> has completed the implementation<br/><br/>✨ The changes have been implemented and are ready for review.<br/>📬 A Pull Request has been created with the requested changes.<br/><br/>🔗 <a href='$(PrUrl)'>View Pull Request</a>"
       
       $(PipelineScriptsDir)/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "$COMMENT"
       
