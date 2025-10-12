@@ -1,0 +1,31 @@
+# Environment variables with sensitive data
+.env
+
+# Logs
+*.log
+/tmp/
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IDEs
+.idea/
+*.swp
+*.swo
+*~
+
+# Node modules (if any)
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Test outputs
+test-results/
+coverage/
