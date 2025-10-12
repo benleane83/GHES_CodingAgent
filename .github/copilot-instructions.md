@@ -80,25 +80,22 @@ When the user asks you to implement or work on a task from Azure DevOps:
 3. **Add Initial Comment - DO THIS FIRST**:
    - **CRITICAL**: This is the FIRST action before any implementation work
    - Add a comment to the work item discussion with these two emojis: 👀🤖
-   - This signals that Copilot has started working on the task
-   - **Important**: Use HTML format for comments, not Markdown
-   - Azure DevOps work item comments use HTML editor
-   - Example: Use `<b>bold</b>` instead of `**bold**`, `<br>` instead of line breaks, etc.
-   - **MANDATORY**: Use the Azure DevOps REST API to add comments
-   - **REST API Details**:
-     - Endpoint: `POST https://dev.azure.com/{organization}/{project}/_apis/wit/workItems/{workItemId}/comments?api-version=7.0-preview.3`
-     - Headers: 
-       - `Content-Type: application/json`
-       - `Authorization: Bearer {PAT}` (use the `AZURE_DEVOPS_PAT` environment variable)
-     - Request Body: `{ "text": "your comment text in HTML format" }`
-     - Example request:
-       ```bash
-       curl -X POST \
-         "https://dev.azure.com/{organization}/{project}/_apis/wit/workItems/{workItemId}/comments?api-version=7.0-preview.3" \
-         -H "Content-Type: application/json" \
-         -H "Authorization: Basic {Base64EncodedPAT}" \
-         -d '{"text": "👀🤖 Started working on this task"}'
-       ```
+   - **MANDATORY**: Use the provided script to add the comment
+   - **Script to use**: `./scripts/add-comment-to-workitem.sh`
+   - **Script usage**:
+     ```bash
+     ./scripts/add-comment-to-workitem.sh <organization> <project> <work-item-id> "👀🤖 Started working on this task"
+     ```
+   - **Parameters to extract**:
+     - `organization`: From `System.CollectionUri` environment variable
+     - `project`: From the work item's `System.TeamProject` field
+     - `work-item-id`: The Work Item ID number
+   - **Example**:
+     ```bash
+     ./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "👀🤖 Started working on this task"
+     ```
+   - **DO NOT**: Try to call the Azure DevOps REST API directly for adding comments
+   - **DO**: Use this script which handles all the complexity
 
 4. **Create a New Branch**:
    - Create a new branch with the naming convention: `copilot/<work-item-id>`
@@ -107,11 +104,41 @@ When the user asks you to implement or work on a task from Azure DevOps:
 
 5. **Update Work Item State**:
    - Update the work item state to "Doing"
-   - This indicates that work has started on the task
+   - **MANDATORY**: Use the provided script to update the state
+   - **Script to use**: `./scripts/update-workitem-state.sh`
+   - **Script usage**:
+     ```bash
+     ./scripts/update-workitem-state.sh <organization> <project> <work-item-id> "Doing"
+     ```
+   - **Parameters to extract**:
+     - `organization`: From `System.CollectionUri` environment variable
+     - `project`: From the work item's `System.TeamProject` field
+     - `work-item-id`: The Work Item ID number
+   - **Example**:
+     ```bash
+     ./scripts/update-workitem-state.sh returngisorg "My Project" 372 "Doing"
+     ```
+   - **DO NOT**: Try to call the Azure DevOps REST API directly
+   - **DO**: Use this script which handles the PATCH request properly
 
 6. **Assign Work Item**:
    - Assign the work item to the user "GitHub Copilot CLI"
-   - This shows who is working on the task
+   - **MANDATORY**: Use the provided script to assign the work item
+   - **Script to use**: `./scripts/assign-workitem.sh`
+   - **Script usage**:
+     ```bash
+     ./scripts/assign-workitem.sh <organization> <project> <work-item-id> "GitHub Copilot CLI"
+     ```
+   - **Parameters to extract**:
+     - `organization`: From `System.CollectionUri` environment variable
+     - `project`: From the work item's `System.TeamProject` field
+     - `work-item-id`: The Work Item ID number
+   - **Example**:
+     ```bash
+     ./scripts/assign-workitem.sh returngisorg "My Project" 372 "GitHub Copilot CLI"
+     ```
+   - **DO NOT**: Try to call the Azure DevOps REST API directly
+   - **DO**: Use this script which handles the assignment properly
 
 7. **Analyze and Plan**:
    - Carefully analyze the work item description
@@ -184,8 +211,17 @@ When the user asks you to implement or work on a task from Azure DevOps:
 
 10. **Update Work Item Activity Field**:
    - Set the work item's "Activity" field based on what was requested in the work item
-   - Common Activity values: `Development`, `Testing`, `Design`, `Documentation`, `Deployment`, `Requirements`, etc.
-   - Choose the most appropriate value based on the work item description and implementation
+   - **MANDATORY**: Use the provided script to update the Activity field
+   - **Script to use**: `./scripts/update-workitem-activity.sh`
+   - **Script usage**:
+     ```bash
+     ./scripts/update-workitem-activity.sh <organization> <project> <work-item-id> <activity>
+     ```
+   - **Parameters to extract**:
+     - `organization`: From `System.CollectionUri` environment variable
+     - `project`: From the work item's `System.TeamProject` field
+     - `work-item-id`: The Work Item ID number
+     - `activity`: One of the valid activity values (see options below)
    - **Activity field options**:
      - `Deployment` - For deployment-related tasks, CI/CD, infrastructure
      - `Design` - For architectural design, UI/UX design work
@@ -193,6 +229,12 @@ When the user asks you to implement or work on a task from Azure DevOps:
      - `Documentation` - For writing docs, README updates, code comments
      - `Requirements` - For gathering or defining requirements
      - `Testing` - For writing tests, QA work, test automation
+   - **Example**:
+     ```bash
+     ./scripts/update-workitem-activity.sh returngisorg "My Project" 372 "Development"
+     ```
+   - **DO NOT**: Try to call the Azure DevOps REST API directly
+   - **DO**: Use this script which handles the PATCH request and validates activity values
 
 11. **Report Issues (if any)**:
    - If any step in the workflow failed or encountered problems:
@@ -203,8 +245,18 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - **Specific scenarios to report**:
      - If unable to push the branch: Explain the error and likely permission issues
      - If unable to create the PR: Detail the error and suggest permission fixes
-     - Add this information to the work item as a comment so the user can see it in Azure DevOps
-     - **Use the same REST API method** described in step 6 to add comments
+     - **MANDATORY**: Add error information to the work item as a comment
+     - **Script to use**: `./scripts/add-comment-to-workitem.sh`
+     - **Script usage**:
+       ```bash
+       ./scripts/add-comment-to-workitem.sh <organization> <project> <work-item-id> "❌ Error: <detailed error message>"
+       ```
+     - **Example**:
+       ```bash
+       ./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "❌ Error: Failed to push branch. Permission denied. Please check repository access permissions."
+       ```
+   - **DO NOT**: Try to call the Azure DevOps REST API directly for error reporting
+   - **DO**: Use this script to add error comments so the user sees them in Azure DevOps
    - Report this at the end of the execution so the user is aware of any issues
 
 **Example PR Description Format**:

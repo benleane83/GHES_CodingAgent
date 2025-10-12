@@ -1,108 +1,237 @@
-# Scripts
+# Azure DevOps Automation Scripts
 
-Este directorio contiene scripts auxiliares utilizados por GitHub Copilot CLI para automatizar tareas de Azure DevOps.
+This directory contains automation scripts for Azure DevOps operations used by the GitHub Copilot CLI agent.
 
-## add-required-reviewer.sh
+## Prerequisites
 
-Script para añadir un reviewer obligatorio (Required Reviewer) a una Pull Request de Azure DevOps.
+All scripts require:
+- **AZURE_DEVOPS_PAT** environment variable with a valid Personal Access Token
+- The PAT must have permissions for:
+  - Work item tracking (read/write)
+  - Code (read/write for PR operations)
+  - Identity (read for user lookups)
 
-### Uso
+## Scripts
 
+### 1. add-comment-to-workitem.sh
+
+Adds a comment to an Azure DevOps work item.
+
+**Usage:**
+```bash
+./scripts/add-comment-to-workitem.sh <organization> <project> <work-item-id> <comment-text>
+```
+
+**Parameters:**
+- `organization`: Azure DevOps organization name (from System_CollectionUri)
+- `project`: Project name (from System.TeamProject field)
+- `work-item-id`: Work Item ID number
+- `comment-text`: The comment text to add (supports HTML formatting)
+
+**Example:**
+```bash
+./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "👀🤖 Started working on this task"
+```
+
+**Output:**
+- Success: "Comment added successfully. Comment ID: 12345"
+- Error: Error message with HTTP status
+
+---
+
+### 2. update-workitem-state.sh
+
+Updates the State field of an Azure DevOps work item.
+
+**Usage:**
+```bash
+./scripts/update-workitem-state.sh <organization> <project> <work-item-id> <state>
+```
+
+**Parameters:**
+- `organization`: Azure DevOps organization name (from System_CollectionUri)
+- `project`: Project name (from System.TeamProject field)
+- `work-item-id`: Work Item ID number
+- `state`: New state value (e.g., "To Do", "Doing", "Done")
+
+**Example:**
+```bash
+./scripts/update-workitem-state.sh returngisorg "My Project" 372 "Doing"
+```
+
+**Output:**
+- Success: "Work item state updated successfully. Current state: Doing"
+- Error: Error message with HTTP status
+
+**Notes:**
+- Valid state values depend on your work item type and process template
+- Common states: "To Do", "Doing", "Done" (Agile), "New", "Active", "Closed" (Scrum)
+
+---
+
+### 3. assign-workitem.sh
+
+Assigns an Azure DevOps work item to a user.
+
+**Usage:**
+```bash
+./scripts/assign-workitem.sh <organization> <project> <work-item-id> <assignee>
+```
+
+**Parameters:**
+- `organization`: Azure DevOps organization name (from System_CollectionUri)
+- `project`: Project name (from System.TeamProject field)
+- `work-item-id`: Work Item ID number
+- `assignee`: User email or display name (e.g., "GitHub Copilot CLI")
+
+**Example:**
+```bash
+./scripts/assign-workitem.sh returngisorg "My Project" 372 "GitHub Copilot CLI"
+```
+
+**Output:**
+- Success: "Work item assigned successfully to: GitHub Copilot CLI"
+- Error: Error message with HTTP status
+
+**Notes:**
+- To assign to the bot, use: "GitHub Copilot CLI"
+- To unassign, pass empty string: ""
+
+---
+
+### 4. update-workitem-activity.sh
+
+Updates the Activity field (Microsoft.VSTS.Common.Activity) of an Azure DevOps work item.
+
+**Usage:**
+```bash
+./scripts/update-workitem-activity.sh <organization> <project> <work-item-id> <activity>
+```
+
+**Parameters:**
+- `organization`: Azure DevOps organization name (from System_CollectionUri)
+- `project`: Project name (from System.TeamProject field)
+- `work-item-id`: Work Item ID number
+- `activity`: Activity type (see valid values below)
+
+**Valid Activity Values:**
+- `Deployment` - For deployment-related tasks, CI/CD, infrastructure
+- `Design` - For architectural design, UI/UX design work
+- `Development` - For coding, implementation, feature development (most common)
+- `Documentation` - For writing docs, README updates, code comments
+- `Requirements` - For gathering or defining requirements
+- `Testing` - For writing tests, QA work, test automation
+
+**Example:**
+```bash
+./scripts/update-workitem-activity.sh returngisorg "My Project" 372 "Development"
+```
+
+**Output:**
+- Success: "Work item Activity field updated successfully. Activity: Development"
+- Error: Error message with HTTP status or invalid activity value
+
+**Notes:**
+- Activity field is case-sensitive
+- Script validates against the list of valid values before making API call
+
+---
+
+### 5. add-required-reviewer.sh
+
+Adds a required reviewer to an Azure DevOps Pull Request.
+
+**Usage:**
 ```bash
 ./scripts/add-required-reviewer.sh <organization> <project> <repository-id> <pr-id> <reviewer-email>
 ```
 
-### Parámetros
+**Parameters:**
+- `organization`: Azure DevOps organization name
+- `project`: Project name (will be URL-encoded by script)
+- `repository-id`: Repository ID (GUID format)
+- `pr-id`: Pull Request ID number
+- `reviewer-email`: Email address of the reviewer
 
-- **organization**: Nombre de la organización de Azure DevOps
-- **project**: Nombre del proyecto (puede contener espacios, se URL-encode automáticamente)
-- **repository-id**: GUID del repositorio
-- **pr-id**: Número de ID de la Pull Request
-- **reviewer-email**: Email del usuario que será el reviewer
+**Example:**
+```bash
+./scripts/add-required-reviewer.sh returngisorg "My Project" abc-123-def 42 user@example.com
+```
 
-### Variables de entorno requeridas
+**Output:**
+- Success: "Required reviewer added successfully. Identity ID: <id>"
+- Error: Error message with details
 
-- **AZURE_DEVOPS_PAT**: Personal Access Token con permisos de `vso.code_write`
+**How it works:**
+1. Retrieves team members to find the reviewer's Identity ID from email
+2. URL-encodes the project name for API compatibility
+3. Makes PUT request to add reviewer as required
+4. Verifies the reviewer was added with `isRequired: true`
 
-### Ejemplo
+**Notes:**
+- Requires the reviewer to be a member of the project
+- Sets `isRequired: true` which prevents PR completion without approval
+- Uses PUT method (not PATCH) as per Azure DevOps API requirements
+
+---
+
+## Environment Variables
+
+### AZURE_DEVOPS_PAT
+Personal Access Token for authentication with Azure DevOps.
+
+**Setting up:**
+```bash
+export AZURE_DEVOPS_PAT="your-pat-token-here"
+```
+
+**Required Scopes:**
+- Work Item Tracking: Read & write
+- Code: Read & write
+- Identity: Read
+- Project and Team: Read
+
+---
+
+## Error Handling
+
+All scripts include error handling for:
+- Missing or invalid parameters
+- Missing AZURE_DEVOPS_PAT environment variable
+- HTTP errors from Azure DevOps API
+- Invalid data formats
+
+Error messages are returned to stderr with appropriate exit codes.
+
+---
+
+## Testing
+
+Test scripts with real Azure DevOps data before use in production:
 
 ```bash
-export AZURE_DEVOPS_PAT="your-pat-token"
-./scripts/add-required-reviewer.sh returngisorg "GitHub Copilot CLI" 0c295722-b409-4a3f-976d-6cd9614425fe 75 user@example.com
+# Test adding comment
+./scripts/add-comment-to-workitem.sh returngisorg "Test Project" 123 "Test comment"
+
+# Test updating state
+./scripts/update-workitem-state.sh returngisorg "Test Project" 123 "Doing"
+
+# Test assigning work item
+./scripts/assign-workitem.sh returngisorg "Test Project" 123 "user@example.com"
+
+# Test updating activity
+./scripts/update-workitem-activity.sh returngisorg "Test Project" 123 "Development"
+
+# Test adding reviewer
+./scripts/add-required-reviewer.sh returngisorg "Test Project" repo-id 1 "user@example.com"
 ```
 
-### Qué hace el script
+---
 
-1. **Busca el Identity ID del usuario**: Consulta los miembros del equipo del proyecto para encontrar el usuario por email
-2. **Añade el reviewer como Required**: Usa la API REST de Azure DevOps para añadir el reviewer con `isRequired: true`
-3. **Verifica el resultado**: Confirma que el reviewer fue añadido correctamente y que es obligatorio
+## API References
 
-### Salida exitosa
+- [Work Items - Add Comment](https://learn.microsoft.com/en-us/rest/api/azure/devops/wit/comments/add?view=azure-devops-rest-7.0)
+- [Work Items - Update](https://learn.microsoft.com/en-us/rest/api/azure/devops/wit/work-items/update?view=azure-devops-rest-7.0)
+- [Pull Request Reviewers - Create](https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-reviewers/create-pull-request-reviewer?view=azure-devops-rest-7.0)
+- [Identities - Read Team Members](https://learn.microsoft.com/en-us/rest/api/azure/devops/core/teams/get-team-members-with-extended-properties?view=azure-devops-rest-7.0)
 
-```
-🔧 Adding Required Reviewer to Azure DevOps PR
-================================================
-Organization: returngisorg
-Project: GitHub Copilot CLI
-Repository ID: 0c295722-b409-4a3f-976d-6cd9614425fe
-PR ID: 75
-Reviewer Email: user@example.com
-
-📋 Step 1: Finding reviewer Identity ID...
--------------------------------------------
-✅ Team ID: f8266e69-c3c5-4855-90ec-d9ceb9ffb8ac
-✅ Found reviewer: User Name
-✅ Identity ID: ace1e6a3-a67d-6acb-b81b-f3304b45453c
-
-📝 Step 2: Adding as Required Reviewer...
--------------------------------------------
-✅ Reviewer added successfully!
-
-🔍 Step 3: Verifying Required Reviewer status...
--------------------------------------------
-✅ Reviewer: User Name
-✅ Email: user@example.com
-✅ isRequired: true
-
-✅✅✅ SUCCESS: Reviewer is REQUIRED
-
-================================================
-🎉 Required Reviewer added successfully!
-================================================
-```
-
-### Códigos de salida
-
-- **0**: Éxito - El reviewer fue añadido correctamente como Required
-- **1**: Error - Falló algún paso del proceso
-
-### Errores comunes
-
-#### Error: AZURE_DEVOPS_PAT no está configurado
-```
-❌ Error: AZURE_DEVOPS_PAT environment variable is not set
-```
-**Solución**: Exporta la variable de entorno con tu PAT
-
-#### Error: Usuario no encontrado
-```
-❌ Error: Could not find user with email: user@example.com
-```
-**Solución**: Verifica que el email es correcto y que el usuario es miembro del proyecto
-
-#### Error: Argumentos incorrectos
-```
-❌ Error: Incorrect number of arguments
-```
-**Solución**: Asegúrate de proporcionar los 5 argumentos requeridos
-
-## Uso en GitHub Copilot CLI
-
-Este script es utilizado automáticamente por GitHub Copilot CLI como parte del workflow de implementación de work items. El agente:
-
-1. Crea la Pull Request en modo Draft
-2. Extrae la información necesaria del work item
-3. Ejecuta este script para añadir al creador del work item como Required Reviewer
-4. Verifica que el reviewer fue añadido correctamente
-
-No es necesario ejecutar este script manualmente a menos que estés haciendo pruebas o debugging.
