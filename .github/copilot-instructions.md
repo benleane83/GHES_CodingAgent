@@ -55,17 +55,26 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - Extract the creator's name and email from the work item's `System.CreatedBy` field
 
 8. **Create a Draft Pull Request**:
-   - Once implementation is complete, create a Pull Request in **Draft** mode
+   - **IMPORTANT**: Create the Pull Request in **Draft** mode (not ready for review)
+   - **IMPORTANT**: Assign the PR to the person who created the work item (from `System.CreatedBy` field)
+   - **IMPORTANT**: Add the tag "copilot" to the PR
+   - Analyze the changes and add additional relevant tags based on the work done:
+     - Consider tags like: `feature`, `bugfix`, `refactor`, `documentation`, `performance`, `security`, `testing`, etc.
+     - Choose tags that best describe the nature of the changes
    - Write a detailed summary of what you implemented, including:
      - 📝 Overview of changes
      - ✨ New features or fixes implemented
      - 🔧 Technical details
      - 🧪 Testing recommendations
      - Use emojis throughout for better readability
-   - **Important**: Assign the PR to the person who created the work item
    - Link the PR to the work item
 
-9. **Report Issues (if any)**:
+9. **Update Work Item Activity Field**:
+   - Set the work item's "Activity" field based on what was requested in the work item
+   - Common Activity values: `Development`, `Testing`, `Design`, `Documentation`, `Deployment`, `Requirements`, etc.
+   - Choose the most appropriate value based on the work item description and implementation
+
+10. **Report Issues (if any)**:
    - If any step in the workflow failed or encountered problems:
      - Clearly document which step(s) failed
      - Explain what went wrong and why
