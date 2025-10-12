@@ -137,9 +137,58 @@ Updates the Activity field (Microsoft.VSTS.Common.Activity) of an Azure DevOps w
 
 ---
 
-### 5. add-required-reviewer.sh
+### 5. create-pr-with-required-reviewer.sh
 
-Adds a required reviewer to an Azure DevOps Pull Request.
+Creates an Azure DevOps Pull Request in Draft mode with a Required Reviewer in a single atomic operation.
+
+**Usage:**
+```bash
+./scripts/create-pr-with-required-reviewer.sh <organization> <project> <repository-id> <source-branch> <target-branch> <title> <description> <reviewer-email>
+```
+
+**Parameters:**
+- `organization`: Azure DevOps organization name
+- `project`: Project name (will be URL-encoded by script)
+- `repository-id`: Repository ID (GUID format)
+- `source-branch`: Source branch name (e.g., "copilot/411")
+- `target-branch`: Target branch name (e.g., "main")
+- `title`: PR title (include work item reference like "AB#411: Description")
+- `description`: PR description with details of changes
+- `reviewer-email`: Email address of the required reviewer
+
+**Example:**
+```bash
+# First get the repository ID
+REPO_ID=$(az repos show --org https://dev.azure.com/returngisorg --project "My Project" --repository "My Repo" --query id -o tsv)
+
+# Create PR with required reviewer
+./scripts/create-pr-with-required-reviewer.sh returngisorg "My Project" "$REPO_ID" "copilot/411" "main" "AB#411: Add feature" "Description with details" user@example.com
+```
+
+**Output:**
+- Success: "PR created successfully with Required Reviewer! PR ID: 77"
+- Error: Error message with details
+
+**What it does:**
+1. Finds the reviewer's Identity ID from their email
+2. Creates a Pull Request in **Draft** mode
+3. Adds the reviewer as **Required** (NOT optional)
+4. Automatically adds the "copilot" label to the PR
+5. Verifies the reviewer was added with `isRequired: true`
+6. Returns the PR ID and URL
+
+**Notes:**
+- PR is created in **Draft** mode by default
+- Reviewer is set as **Required** which prevents PR completion without their approval
+- The "copilot" label is automatically added
+- This is an atomic operation - PR and required reviewer are added together
+- Much more reliable than using `az repos pr create --reviewers` which only adds optional reviewers
+
+---
+
+### 6. add-required-reviewer.sh
+
+Adds a required reviewer to an existing Azure DevOps Pull Request.
 
 **Usage:**
 ```bash

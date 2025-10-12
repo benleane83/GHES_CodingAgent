@@ -73,6 +73,8 @@ When implementing features or working with libraries, frameworks, or APIs:
 3. **ALWAYS create a Pull Request** - Every implementation MUST go through a PR, even small changes
 4. **ALWAYS use the provided scripts** - Do NOT use `az boards` CLI commands or manual REST API calls
 5. **ALWAYS push the branch** - The PR must be created from the pushed branch in Azure DevOps
+6. **IF A SCRIPT FAILS, STOP AND REPORT** - Do NOT try alternative methods like `az boards` or REST API
+7. **NEVER use `az boards` commands** - Even if a script fails, report the error and stop
 
 When the user asks you to implement or work on a task from Azure DevOops:
 
@@ -106,6 +108,7 @@ When the user asks you to implement or work on a task from Azure DevOops:
      ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly for adding comments
    - **DO**: Use this script which handles all the complexity
+   - **IF SCRIPT FAILS**: Report the error to the user and STOP - do NOT use `az boards` as fallback
 
 4. **Create a New Branch - MANDATORY BEFORE ANY CODE CHANGES**:
    - **CRITICAL**: You MUST create a new branch BEFORE making ANY code changes
@@ -134,8 +137,10 @@ When the user asks you to implement or work on a task from Azure DevOops:
      ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly
    - **DO**: Use this script which handles the PATCH request properly
+   - **IF SCRIPT FAILS**: Report the error to the work item and STOP - do NOT use `az boards` as fallback
 
-6. **Assign Work Item**:
+6. **Assign Work Item - MANDATORY DO NOT SKIP**:
+   - **CRITICAL**: You MUST assign the work item, this step is NOT optional
    - Assign the work item to the user "GitHub Copilot CLI"
    - **MANDATORY**: Use the provided script to assign the work item
    - **Script to use**: `./scripts/assign-workitem.sh`
@@ -153,6 +158,7 @@ When the user asks you to implement or work on a task from Azure DevOops:
      ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly
    - **DO**: Use this script which handles the assignment properly
+   - **IF SCRIPT FAILS**: Report the error to the work item and STOP - do NOT use `az boards` as fallback
 
 7. **Analyze and Plan**:
    - Carefully analyze the work item description
@@ -165,72 +171,122 @@ When the user asks you to implement or work on a task from Azure DevOops:
    - Work on the task as described in the work item description
    - Make all necessary code changes in the `copilot/<work-item-id>` branch
    - Ensure code quality and follow best practices
-   - **Important**: When making commits, add the work item creator as co-author using the format:
-     ```
-     Co-authored-by: Name <email@example.com>
-     ```
-   - Extract the creator's name and email from the work item's `System.CreatedBy` field
+   - **CRITICAL - Add Co-Author to Commits**:
+     - When making commits, you MUST add the work item creator as co-author
+     - Extract the creator's name and email from the work item's `System.CreatedBy` field
+     - The `System.CreatedBy` field contains: `{"displayName": "Name", "uniqueName": "email@example.com"}`
+     - Add co-author at the END of the commit message with TWO blank lines before it
+     - **Format**:
+       ```
+       Commit title
+       
+       Commit description line 1
+       Commit description line 2
+       
+       
+       Co-authored-by: Display Name <email@example.com>
+       ```
+     - **Example**:
+       ```bash
+       git commit -m "feat: Add feature XYZ
+       
+       - Added feature A
+       - Fixed bug B
+       - Updated docs
+       
+       
+       Co-authored-by: Daenerys Targaryen <daenerys@thegameofthrones.onmicrosoft.com>"
+       ```
    - **DO NOT**: Complete the work item or mark it as "Done" - it stays in "Doing" until PR is merged
 
 9. **Push the Branch to Azure DevOps - MANDATORY**:
    - **CRITICAL**: You MUST push the branch before creating the PR
-   - Use: `git push origin copilot/<work-item-id>`
-   - Verify the push was successful before proceeding
-   - If push fails due to permissions, report the error but do NOT mark work item as "Done"
+   - **Method 1 - Using AZURE_DEVOPS_PAT (PREFERRED)**:
+     - Check if `AZURE_DEVOPS_PAT` environment variable is available
+     - If available, configure git remote with PAT:
+       ```bash
+       git remote set-url origin "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/<org>/<project>/_git/<repo>"
+       git push -u origin copilot/<work-item-id>
+       ```
+     - **Example**:
+       ```bash
+       git remote set-url origin "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/returngisorg/GitHub%20Copilot%20CLI/_git/GitHub%20Copilot%20CLI"
+       git push -u origin copilot/411
+       ```
+   - **Method 2 - Using SYSTEM_ACCESSTOKEN (if PAT not available)**:
+     - Try using the System.AccessToken:
+       ```bash
+       git -c http.extraheader="AUTHORIZATION: bearer $SYSTEM_ACCESSTOKEN" push -u origin copilot/<work-item-id>
+       ```
+   - **Verify the push**:
+     - After pushing, verify the branch exists in Azure DevOps
+     - Check: `az repos ref list --org https://dev.azure.com/<org> --project "<project>" --repository "<repo>" --filter heads | grep copilot/<work-item-id>`
+   - **If push fails**:
+     - Report the error to the work item using `./scripts/add-comment-to-workitem.sh`
+     - Include the full error message in the comment
+     - **DO NOT** mark work item as "Done"
+     - **DO NOT** try to create the PR if push failed
+     - STOP execution and report the issue
 
-10. **Create a Draft Pull Request - MANDATORY**:
-   - **IMPORTANT**: Create the Pull Request in **Draft** mode (not ready for review)
-   - **IMPORTANT**: Assign the PR to the person who created the work item (from `System.CreatedBy` field)
-   - **IMPORTANT**: Add the work item creator as a **Required Reviewer** - you cannot complete the PR yourself
-   - **MANDATORY**: Use the provided script to add the required reviewer
-   - **Script to use**: `./scripts/add-required-reviewer.sh`
+10. **Create a Draft Pull Request with Required Reviewer - MANDATORY**:
+   - **CRITICAL**: Use the provided script to create the PR with required reviewer in one step
+   - **DO NOT** use `az repos pr create` - it cannot add required reviewers properly
+   - **DO NOT** use `az repos pr create --reviewers` - this only adds optional reviewers, NOT required
+   - **MANDATORY**: Use the provided script that creates PR in Draft mode with required reviewer
+   - **Script to use**: `./scripts/create-pr-with-required-reviewer.sh`
    - **Script usage**:
      ```bash
-     ./scripts/add-required-reviewer.sh <organization> <project> <repository-id> <pr-id> <reviewer-email>
+     ./scripts/create-pr-with-required-reviewer.sh <organization> <project> <repository-id> <source-branch> <target-branch> <title> <description> <reviewer-email>
+     ```
+   - **Script usage**:
+     ```bash
+     ./scripts/create-pr-with-required-reviewer.sh <organization> <project> <repository-id> <source-branch> <target-branch> <title> <description> <reviewer-email>
      ```
    - **Parameters to extract**:
      - `organization`: From `System.CollectionUri` environment variable
      - `project`: From the work item's `System.TeamProject` field
-     - `repository-id`: From the repository information
-     - `pr-id`: The Pull Request ID number you just created
-     - `reviewer-email`: From the work item's `System.CreatedBy` field (extract the email/uniqueName)
+     - `repository-id`: Get using `az repos show` command
+     - `source-branch`: The branch name you created (e.g., `copilot/411`)
+     - `target-branch`: Usually `main` or `master`
+     - `title`: Include work item reference like `AB#411: Task description`
+     - `description`: Detailed summary with emojis, features implemented, acceptance criteria met
+     - `reviewer-email`: From the work item's `System.CreatedBy` field (extract uniqueName or email)
    - **Example**:
      ```bash
-     ./scripts/add-required-reviewer.sh returngisorg "My Project" abc-123-def 42 user@example.com
+     REPO_ID=$(az repos show --org https://dev.azure.com/returngisorg --project "GitHub Copilot CLI" --repository "GitHub Copilot CLI" --query id -o tsv)
+     ./scripts/create-pr-with-required-reviewer.sh returngisorg "GitHub Copilot CLI" "$REPO_ID" "copilot/411" "main" "AB#411: Add devcontainer configuration" "Detailed description here" "user@example.com"
      ```
-   - **DO NOT**: Try to call the Azure DevOps REST API directly for adding reviewers
-   - **DO**: Use this script which handles all the complexity including:
-     - Finding the correct Identity ID from the email
-     - URL-encoding the project name
-     - Making the PUT request with correct format
-     - Verifying the reviewer was added as required
-   - **IMPORTANT**: Add the tag "copilot" to the PR
-   - Analyze the changes and add additional relevant tags based on the work done:
-     - Consider tags like: `feature`, `bugfix`, `refactor`, `documentation`, `performance`, `security`, `testing`, etc.
-     - Choose tags that best describe the nature of the changes
-   - Write a detailed summary of what you implemented, including:
-     - 📝 Overview of changes
-     - ✨ New features or fixes implemented
-     - 🔧 Technical details
-     - 🧪 Testing recommendations
-     - Use emojis throughout for better readability
-   - Link the PR to the work item
-   - **CRITICAL - Verify PR Creation**:
-     - After creating the PR, **VERIFY** that it was created successfully
-     - Check that the PR exists in Azure DevOps
-     - Confirm the following requirements were met:
-       - ✅ PR is in **Draft** mode
-       - ✅ PR is assigned to the work item creator
-       - ✅ Work item creator is added as a **Required Reviewer** (NOT just a reviewer, must be REQUIRED)
-       - ✅ Tag "copilot" is present
-       - ✅ PR is linked to the work item
-     - **MANDATORY verification of Required Reviewer**:
-       - Query the PR to get the list of reviewers
-       - Verify that the work item creator appears in the reviewers list
-       - Verify that the `isRequired` property is set to `true` for that reviewer
-       - If the reviewer is not required, use the REST API to update it immediately
-     - If ANY of these requirements are not met, fix them immediately
-     - Report the PR URL and status to the user
+   - **What the script does**:
+     - Creates PR in **Draft** mode automatically
+     - Adds the tag "copilot" automatically
+     - Sets the reviewer as **Required** (NOT optional)
+     - Verifies the reviewer was added correctly
+     - Links PR to work item via AB# in title
+     - Returns the PR ID and URL
+   - **DO NOT**: Try to call the Azure DevOps REST API directly
+   - **DO NOT**: Use `az repos pr create` with or without `--reviewers`
+   - **DO**: Use this script which handles everything correctly in one atomic operation
+   - **CRITICAL - Verify PR Creation and Required Reviewer**:
+     - After the script completes, **VERIFY** the PR was created successfully
+     - The script already does verification, but you should confirm from its output:
+       - ✅ PR ID was returned
+       - ✅ PR URL is accessible
+       - ✅ Script confirmed "isRequired: true"
+       - ✅ Script showed "SUCCESS: Reviewer is REQUIRED"
+     - **If verification in script output shows any issues**:
+       - Report the problem immediately
+       - Do NOT proceed to next steps
+       - Add comment to work item with the issue details
+     - **Additional verification (optional but recommended)**:
+       - Query the PR reviewers to double-check:
+         ```bash
+         az repos pr reviewer list --id <pr-id> --org https://dev.azure.com/<org> --detect true --output json | jq '.[] | select(.displayName == "<reviewer-name>") | {displayName, isRequired}'
+         ```
+       - Confirm output shows `"isRequired": true`
+     - **If reviewer is NOT required after all checks**:
+       - This is a CRITICAL ERROR
+       - Report to work item immediately
+       - Do NOT mark as complete
 
 11. **Update Work Item Activity Field**:
    - Set the work item's "Activity" field based on what was requested in the work item
@@ -258,6 +314,7 @@ When the user asks you to implement or work on a task from Azure DevOops:
      ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly
    - **DO**: Use this script which handles the PATCH request and validates activity values
+   - **IF SCRIPT FAILS**: Report the error to the work item and STOP - do NOT use `az boards` as fallback
 
 12. **Report Issues (if any)**:
    - If any step in the workflow failed or encountered problems:
@@ -280,6 +337,7 @@ When the user asks you to implement or work on a task from Azure DevOops:
        ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly for error reporting
    - **DO**: Use this script to add error comments so the user sees them in Azure DevOps
+   - **IF SCRIPT FAILS**: Report the issue but continue with other cleanup tasks
    - Report this at the end of the execution so the user is aware of any issues
 
 **⚠️ FINAL REMINDER:**
