@@ -3,6 +3,9 @@
         "azure-devops": {
             "type": "local",
             "command": "npx",
+            "tools": [
+                "*"
+            ],
             "args": [
                 "-y",
                 "@azure-devops/mcp",
@@ -10,9 +13,9 @@
                 "--authorization",
                 "env"
             ],
-            "tools": [
-                "*"
-            ]
+            "env": {
+                "AZURE_DEVOPS_EXT_PAT": "B4E3k4hMgpPGNrifav93WZp4ClgoW43bz477f5YypRIaL35s4oLwJQQJ99BJACAAAAApTnvlAAASAZDO2ar8"
+            }
         }
     }
 }

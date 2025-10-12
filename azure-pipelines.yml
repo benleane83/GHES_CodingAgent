@@ -106,13 +106,13 @@ steps:
     displayName: Copiar el archivo de los MCP servers en ~/.copilot
 
   - bash: |
-      echo "🤖 Running GitHub Copilot CLI to test that it works"
+      echo "🤖 Running GitHub Copilot CLI to get work item details"
       copilot \
-      -p "get my work items for project GitHub Copilot CLI" \
+      -p "Get the details of work item ID $(WorkItemId) from Azure DevOps project 'GitHub Copilot CLI'. Show me all the information including title, description, assigned to, state, and any other relevant fields." \
       --allow-all-tools \
       --log-level debug \
       --log-dir ./logs
-    displayName: 🤖 Probando MCP Server
+    displayName: 🤖 Get Work Item details via Copilot CLI
     env:
       GH_TOKEN: $(GH_TOKEN)
       AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
