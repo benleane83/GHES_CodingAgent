@@ -15,6 +15,12 @@ steps:
   - script: echo "🚀 Webhook triggered pipeline started!"
     displayName: 🚀 Webhook triggered
 
+  - task: NodeTool@0
+    inputs:
+      versionSource: 'spec'
+      versionSpec: '22.x'
+      checkLatest: true
+
   - bash: |
       # Access webhook data as parameter
       echo "🔔 Processing webhook payload..."
