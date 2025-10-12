@@ -88,13 +88,38 @@ steps:
       echo "##vso[task.setvariable variable=WorkItemAssignedTo]${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'] }}"
       echo "##vso[task.setvariable variable=WorkItemDescription]${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
       echo "##vso[task.setvariable variable=ProjectName]${{ parameters.myWebhookResource.resource.fields['System.TeamProject'] }}"
-      
+
+      # Extract Repository Name from Description (format: Repository Name: TARGET_REPO)
+      REPO_LINE=$(echo "${{ parameters.myWebhookResource.resource.fields['System.Description'] }}" | grep -i '^Repository Name:' || true)
+      if [ -n "$REPO_LINE" ]; then
+        TARGET_REPO=$(echo "$REPO_LINE" | sed 's/Repository Name:[[:space:]]*//I')
+        echo "Target repository found: $TARGET_REPO"
+        echo "##vso[task.setvariable variable=TargetRepoName]$TARGET_REPO"
+      else
+        echo "No target repository specified in the work item description. Using current repository."
+        echo "##vso[task.setvariable variable=TargetRepoName]$(Build.Repository.Name)"
+      fi
+
       # Extract email from CreatedBy field (format: "Display Name <email@domain.com>")
       CREATED_BY="${{ parameters.myWebhookResource.resource.fields['System.CreatedBy'] }}"
       CREATOR_EMAIL=$(echo "$CREATED_BY" | grep -oP '[\w\.-]+@[\w\.-]+' || echo "$CREATED_BY")
       echo "##vso[task.setvariable variable=CreatorEmail]$CREATOR_EMAIL"
       echo "📧 Creator Email extracted: $CREATOR_EMAIL"
-    displayName: 📋 Parse Webhook Data
+  - bash: |
+      if [ "$(TargetRepoName)" != "$(Build.Repository.Name)" ]; then
+        echo "Cloning target repository: $(TargetRepoName)"
+        git clone "https://dev.azure.com/$(System.CollectionUri)/$(ProjectName)/_git/$(TargetRepoName)" target-repo
+        cd target-repo
+        git config user.email "copilot-cli@azure.com"
+        git config user.name "GitHub Copilot CLI"
+      else
+        echo "Using current repository."
+        mkdir -p target-repo
+        rsync -a --exclude target-repo ./ target-repo/
+        cd target-repo
+      fi
+      echo "##vso[task.setvariable variable=TargetRepoDir]$(System.DefaultWorkingDirectory)/target-repo"
+    displayName: 🛎️ Clone Target Repository
 
   - bash: |
       npm install -g @github/copilot
@@ -117,8 +142,7 @@ steps:
 
   - bash: |
       echo "🌿 Creating feature branch..."
-      git config user.email "copilot-cli@azure.com"
-      git config user.name "GitHub Copilot CLI"
+      cd "$(TargetRepoDir)"
       git checkout -b copilot/$(WorkItemId)
       echo "✅ Branch copilot/$(WorkItemId) created"
       git branch --show-current
@@ -146,11 +170,10 @@ steps:
       echo "📋 Work Item: $(WorkItemId)"
       echo "📌 Title: $(WorkItemTitle)"
       echo "📁 Project: $(ProjectName)"
-      echo "═══════════════════════════════════════════════════════════"     
-
-
-      copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ./logs --model $(MODEL)
-
+      echo "📦 Target Repository: $(TargetRepoName)"
+      echo "═══════════════════════════════════════════════════════════"
+      cd "$(TargetRepoDir)"
+      copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL)
     displayName: 🤖 Step 6 - Implement Changes with Copilot
     name: CopilotStep
     env:
@@ -160,9 +183,9 @@ steps:
 
   - bash: |
       echo "📝 Committing changes..."
-
+      cd "$(TargetRepoDir)"
       # Extract creator info from work item
-      CREATOR_INFO=$(./scripts/get-workitem.sh $(WorkItemId) "$(ProjectName)")
+      CREATOR_INFO=$(../../scripts/get-workitem.sh $(WorkItemId) "$(ProjectName)")
       CREATOR_NAME=$(echo "$CREATOR_INFO" | grep "Created By Name:" | sed 's/Created By Name:[[:space:]]*//')
       CREATOR_EMAIL=$(echo "$CREATOR_INFO" | grep "Created By Email:" | sed 's/Created By Email:[[:space:]]*//')
 
@@ -205,11 +228,12 @@ steps:
 
   - bash: |
       echo "🚀 Pushing branch to remote..."
+      cd "$(TargetRepoDir)"
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
 
       # URL encode the project name and repository name (removing newlines)
       PROJECT_ENCODED=$(printf '%s' "$(ProjectName)" | jq -sRr @uri | tr -d '\n')
-      REPO_ENCODED=$(printf '%s' "$(Build.Repository.Name)" | jq -sRr @uri | tr -d '\n')
+      REPO_ENCODED=$(printf '%s' "$(TargetRepoName)" | jq -sRr @uri | tr -d '\n')
 
       # Configure git remote with PAT
       git remote set-url origin "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/${ORG}/${PROJECT_ENCODED}/_git/${REPO_ENCODED}"
@@ -231,24 +255,24 @@ steps:
 
   - bash: |
       echo "📬 Creating Pull Request..."
-      
+      cd "$(TargetRepoDir)"
       # Extract organization from collection URI
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
-      
+
       # Read the summary generated by Copilot
       if [ -f "copilot-summary.md" ]; then
         PR_DESCRIPTION=$(cat copilot-summary.md)
       else
         PR_DESCRIPTION="Automated implementation by GitHub Copilot CLI for Work Item #$(WorkItemId)"
       fi
-      
+
       # Get target branch (default to main)
       TARGET_BRANCH="main"
-      
-      ./scripts/create-pr-with-required-reviewer.sh \
+
+      ./../../scripts/create-pr-with-required-reviewer.sh \
         "$ORG" \
         "$(ProjectName)" \
-        "$(Build.Repository.ID)" \
+        "$(TargetRepoName)" \
         "copilot/$(WorkItemId)" \
         "$TARGET_BRANCH" \
         "$(WorkItemTitle)" \
@@ -256,9 +280,9 @@ steps:
         "$(CreatorEmail)"
 
       echo "✅ Pull Request created successfully"
-      
+
       # Store PR URL for the next step
-      echo "##vso[task.setvariable variable=PrUrl]https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(Build.Repository.Name)/pullrequest"
+      echo "##vso[task.setvariable variable=PrUrl]https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(TargetRepoName)/pullrequest"
     displayName: 📬 Step 10 - Create Pull Request
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
