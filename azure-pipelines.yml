@@ -105,10 +105,17 @@ steps:
       CREATOR_EMAIL=$(echo "$CREATED_BY" | grep -oP '[\w\.-]+@[\w\.-]+' || echo "$CREATED_BY")
       echo "##vso[task.setvariable variable=CreatorEmail]$CREATOR_EMAIL"
       echo "📧 Creator Email extracted: $CREATOR_EMAIL"
+    displayName: 📋 Parse Webhook Data
+
   - bash: |
       if [ "$(TargetRepoName)" != "$(Build.Repository.Name)" ]; then
         echo "Cloning target repository: $(TargetRepoName)"
-        git clone "$(System.CollectionUri)$(ProjectName)/_git/$(TargetRepoName)" target-repo
+        
+        # URL encode the project name and repository name
+        PROJECT_ENCODED=$(printf '%s' "$(ProjectName)" | jq -sRr @uri | tr -d '\n')
+        REPO_ENCODED=$(printf '%s' "$(TargetRepoName)" | jq -sRr @uri | tr -d '\n')
+        
+        git clone "$(System.CollectionUri)${PROJECT_ENCODED}/_git/${REPO_ENCODED}" target-repo
         cd target-repo
         git config user.email "copilot-cli@azure.com"
         git config user.name "GitHub Copilot CLI"
@@ -295,7 +302,7 @@ steps:
       CREATOR_DISPLAY_NAME=$(echo "$(WorkItemCreatedBy)" | sed 's/<.*//' | xargs)
       
       # Create a rich comment with the completion status and mention
-      COMMENT="@&lt;${CREATOR_DISPLAY_NAME}&gt; ✅🤖 <b>GitHub Copilot</b> ha completado la implementación<br/><br/>✨ Los cambios han sido implementados y están listos para revisión.<br/>📬 Se ha creado un Pull Request con los cambios solicitados.<br/><br/>🔗 <a href='https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(Build.Repository.Name)/pullrequest'>Ver Pull Request</a>"
+      COMMENT="@${CREATOR_DISPLAY_NAME} ✅🤖 <b>GitHub Copilot</b> ha completado la implementación<br/><br/>✨ Los cambios han sido implementados y están listos para revisión.<br/>📬 Se ha creado un Pull Request con los cambios solicitados.<br/><br/>🔗 <a href='https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(Build.Repository.Name)/pullrequest'>Ver Pull Request</a>"
       
       ./scripts/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "$COMMENT"
       
