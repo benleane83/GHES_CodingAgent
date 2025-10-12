@@ -36,11 +36,11 @@ You will receive the work item description in your prompt. Your responsibilities
 
 ### 2. Generate Implementation Summary
 
-**CRITICAL**: You MUST create TWO files:
+**CRITICAL - MANDATORY**: After implementing the changes, you MUST create TWO files in the repository root. The pipeline will fail if these files are missing.
 
 #### A) `copilot-summary.md` - Pull Request Description
 
-This file will be used as the Pull Request description.
+**YOU MUST CREATE THIS FILE**. This file will be used as the Pull Request description.
 
 **Required format**:
 
@@ -66,7 +66,7 @@ This file will be used as the Pull Request description.
 - [x] [Acceptance criterion 2]
 ```
 
-**Command to create the summary file**:
+**YOU MUST RUN THIS COMMAND** to create the summary file:
 ```bash
 cat > copilot-summary.md << 'EOF'
 ## ✨ Implemented Changes
@@ -91,7 +91,7 @@ EOF
 
 #### B) `commit-message.md` - Commit Message
 
-This file will be used as the git commit message.
+**YOU MUST CREATE THIS FILE**. This file will be used as the git commit message.
 
 **Required format** (follow Conventional Commits):
 
@@ -112,7 +112,7 @@ This file will be used as the git commit message.
 - `test`: Adding or updating tests
 - `chore`: Maintenance tasks
 
-**Command to create the commit message file**:
+**YOU MUST RUN THIS COMMAND** to create the commit message file:
 ```bash
 cat > commit-message.md << 'EOF'
 feat: Add new feature
@@ -123,3 +123,11 @@ Implemented the requested functionality following best practices.
 - Updated file2.ext: refactored logic
 EOF
 ```
+
+## ⚠️ FINAL REMINDER
+
+Before you finish, verify that you have created:
+1. ✅ `copilot-summary.md` - in the repository root
+2. ✅ `commit-message.md` - in the repository root
+
+**The pipeline will fail without these files!**
