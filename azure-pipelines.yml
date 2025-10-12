@@ -104,6 +104,7 @@ steps:
     env:
       GH_TOKEN: $(GH_TOKEN)
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+      CONTEXT7_API_KEY: $(CONTEXT7_API_KEY)
 
   - task: PublishPipelineArtifact@1
     inputs:
