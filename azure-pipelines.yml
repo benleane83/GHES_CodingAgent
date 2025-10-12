@@ -84,16 +84,12 @@ steps:
       echo "##vso[task.setvariable variable=WorkItemCreatedBy]${{ parameters.myWebhookResource.resource.fields['System.CreatedBy'] }}"
       echo "##vso[task.setvariable variable=WorkItemAssignedTo]${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'] }}"
       echo "##vso[task.setvariable variable=WorkItemDescription]${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
+      echo "##vso[task.setvariable variable=ProjectName]${{ parameters.myWebhookResource.resource.fields['System.TeamProject'] }}"
     displayName: Display webhook information 📊
 
   - bash: |
       npm install -g @github/copilot     
-    displayName: 🤖 Install GitHub Copilot CLI 
-  
-  # - bash: |
-  #     # Example usage of GitHub Copilot CLI
-  #     copilot --help
-  #   displayName: 🤖 Verify GitHub Copilot CLI Installation
+    displayName: 🤖 Install GitHub Copilot CLI   
 
   - bash: |
       echo "🤖 Running GitHub Copilot CLI to test that it works"     
@@ -108,7 +104,7 @@ steps:
   - bash: |
       echo "🤖 Running GitHub Copilot CLI to get work item details"
       copilot \
-      -p "Get the details of work item ID $(WorkItemId) from Azure DevOps project 'GitHub Copilot CLI'. Show me all the information including title, description, assigned to, state, and any other relevant fields." \
+      -p "Get the details of work item ID $(WorkItemId) from Azure DevOps project '$(ProjectName)'. Show me all the information including title, description, assigned to, state, and any other relevant fields." \
       --allow-all-tools \
       --log-level debug \
       --log-dir ./logs
@@ -116,6 +112,20 @@ steps:
     env:
       GH_TOKEN: $(GH_TOKEN)
       AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+
+  - bash: |
+      echo "🤖 Running GitHub Copilot CLI to add comment to work item"
+      copilot \
+      -p "Quiero añadir como comentario a la discusión del work item $(WorkItemId) de Azure DevOps project '$(ProjectName)' estos dos emojis 👀🤖" \
+      --allow-all-tools \
+      --log-level debug \
+      --log-dir ./logs
+    displayName: 🤖 Add comment to Work Item via Copilot CLI
+    env:
+      GH_TOKEN: $(GH_TOKEN)
+      AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
 
   - task: PublishPipelineArtifact@1
     inputs:
