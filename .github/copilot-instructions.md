@@ -93,6 +93,13 @@ When the user asks you to implement or work on a task from Azure DevOops:
    - **CRITICAL**: This is the FIRST action before any implementation work
    - Add a comment to the work item discussion with these two emojis: 👀🤖
    - **MANDATORY**: Use the provided script to add the comment
+   - **IMPORTANT - HTML Format**: When adding comments, use HTML format, NOT Markdown
+     - Azure DevOps comments display better with HTML
+     - Use `<b>` instead of `**` for bold
+     - Use `<i>` instead of `*` for italics
+     - Use `<br/>` for line breaks
+     - Use `<ul><li>` for lists
+     - Use `<a href="">` for links
    - **Script to use**: `./scripts/add-comment-to-workitem.sh`
    - **Script usage**:
      ```bash
@@ -326,14 +333,23 @@ When the user asks you to implement or work on a task from Azure DevOops:
      - If unable to push the branch: Explain the error and likely permission issues
      - If unable to create the PR: Detail the error and suggest permission fixes
      - **MANDATORY**: Add error information to the work item as a comment
+     - **IMPORTANT - Use HTML Format**: Format error comments in HTML for better display
+       - Example HTML error comment:
+         ```html
+         ❌ <b>Error:</b> Failed to push branch<br/><br/>
+         <b>Details:</b> Permission denied<br/>
+         <b>Error message:</b><br/>
+         <pre>fatal: unable to access 'https://dev.azure.com/...': The requested URL returned error: 403</pre><br/>
+         <b>Possible solution:</b> Please check repository access permissions for the build service account.
+         ```
      - **Script to use**: `./scripts/add-comment-to-workitem.sh`
      - **Script usage**:
        ```bash
-       ./scripts/add-comment-to-workitem.sh <organization> <project> <work-item-id> "❌ Error: <detailed error message>"
+       ./scripts/add-comment-to-workitem.sh <organization> <project> <work-item-id> "❌ <b>Error:</b> <detailed error message in HTML>"
        ```
      - **Example**:
        ```bash
-       ./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "❌ Error: Failed to push branch. Permission denied. Please check repository access permissions."
+       ./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "❌ <b>Error:</b> Failed to push branch. Permission denied.<br/><br/>Please check repository access permissions."
        ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly for error reporting
    - **DO**: Use this script to add error comments so the user sees them in Azure DevOps

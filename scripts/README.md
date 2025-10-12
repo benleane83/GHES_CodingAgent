@@ -28,9 +28,24 @@ Adds a comment to an Azure DevOps work item.
 - `work-item-id`: Work Item ID number
 - `comment-text`: The comment text to add (supports HTML formatting)
 
+**IMPORTANT - HTML Formatting:**
+- Azure DevOps comments display better with HTML format, NOT Markdown
+- Use `<b>` instead of `**` for bold
+- Use `<i>` instead of `*` for italics
+- Use `<br/>` for line breaks
+- Use `<ul><li>` for lists
+- Use `<a href="">` for links
+- Use `<pre>` for code blocks
+
 **Example:**
 ```bash
 ./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "👀🤖 Started working on this task"
+
+# HTML formatted example:
+./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "✅ <b>Implementation completed</b><br/><br/><b>Changes made:</b><ul><li>Feature A</li><li>Feature B</li></ul>"
+
+# Error reporting example:
+./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "❌ <b>Error:</b> Failed to push branch<br/><br/><b>Details:</b> Permission denied"
 ```
 
 **Output:**
