@@ -108,7 +108,7 @@ steps:
   - bash: |
       if [ "$(TargetRepoName)" != "$(Build.Repository.Name)" ]; then
         echo "Cloning target repository: $(TargetRepoName)"
-        git clone "https://dev.azure.com/$(System.CollectionUri)/$(ProjectName)/_git/$(TargetRepoName)" target-repo
+        git clone "$(System.CollectionUri)$(ProjectName)/_git/$(TargetRepoName)" target-repo
         cd target-repo
         git config user.email "copilot-cli@azure.com"
         git config user.name "GitHub Copilot CLI"
