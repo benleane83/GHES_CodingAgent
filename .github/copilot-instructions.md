@@ -31,16 +31,20 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - Use the MCP Server to update the work item state to "Doing"
    - This indicates that work has started on the task
 
-4. **Add Initial Comment**:
+4. **Assign Work Item**:
+   - Use the MCP Server to assign the work item to the user "GitHub Copilot CLI"
+   - This shows who is working on the task
+
+5. **Add Initial Comment**:
    - Add a comment to the work item discussion with these two emojis: 👀🤖
    - This signals that Copilot has started working on the task
 
-5. **Analyze and Plan**:
+6. **Analyze and Plan**:
    - Carefully analyze the work item description
    - Plan your implementation approach
    - Share your analysis and approach with the user before proceeding
 
-6. **Implement the Changes**:
+7. **Implement the Changes**:
    - Work on the task as described in the work item description
    - Make all necessary code changes in the `copilot/<work-item-id>` branch
    - Ensure code quality and follow best practices
@@ -50,7 +54,7 @@ When the user asks you to implement or work on a task from Azure DevOps:
      ```
    - Extract the creator's name and email from the work item's `System.CreatedBy` field
 
-7. **Create a Draft Pull Request**:
+8. **Create a Draft Pull Request**:
    - Once implementation is complete, create a Pull Request in **Draft** mode
    - Write a detailed summary of what you implemented, including:
      - 📝 Overview of changes
