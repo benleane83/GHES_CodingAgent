@@ -14,9 +14,10 @@ show_usage() {
     echo "  project          : Project name (optional, uses System.TeamProject env var if not provided)"
     echo ""
     echo "Environment Variables:"
-    echo "  AZURE_DEVOPS_PAT     : Personal Access Token for authentication (required)"
-    echo "  System_CollectionUri : Azure DevOps organization URL (required)"
-    echo "  System_TeamProject   : Project name (used if project argument not provided)"
+    echo "  AZURE_DEVOPS_PAT         : Personal Access Token for authentication (required)"
+    echo "  SYSTEM_COLLECTIONURI     : Azure DevOps organization URL (required, Azure Pipelines format)"
+    echo "  System_CollectionUri     : Azure DevOps organization URL (alternative format)"
+    echo "  System_TeamProject       : Project name (used if project argument not provided)"
     echo ""
     echo "Examples:"
     echo "  $0 412"
@@ -45,15 +46,18 @@ else
     show_usage
 fi
 
-# Extraer organización de System_CollectionUri
-if [ -z "$System_CollectionUri" ]; then
-    echo "❌ Error: System_CollectionUri environment variable is not set"
-    echo "   Example: export System_CollectionUri='https://dev.azure.com/myorg/'"
+# Extraer organización de System_CollectionUri o SYSTEM_COLLECTIONURI
+# Azure Pipelines usa SYSTEM_COLLECTIONURI (mayúsculas)
+COLLECTION_URI="${System_CollectionUri:-$SYSTEM_COLLECTIONURI}"
+
+if [ -z "$COLLECTION_URI" ]; then
+    echo "❌ Error: Neither System_CollectionUri nor SYSTEM_COLLECTIONURI environment variable is set"
+    echo "   Example: export SYSTEM_COLLECTIONURI='https://dev.azure.com/myorg/'"
     exit 1
 fi
 
 # Extraer el nombre de la organización de la URL
-ORGANIZATION=$(echo "$System_CollectionUri" | sed -E 's|https://dev\.azure\.com/([^/]+)/?|\1|')
+ORGANIZATION=$(echo "$COLLECTION_URI" | sed -E 's|https://dev\.azure\.com/([^/]+)/?|\1|')
 
 # Validar PAT
 if [ -z "$AZURE_DEVOPS_PAT" ]; then

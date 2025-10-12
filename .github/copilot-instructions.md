@@ -12,18 +12,24 @@ When implementing features or working with libraries, frameworks, or APIs:
 
 ## Azure DevOps Organization Context
 
-**CRITICAL - READ THIS FIRST**: The Azure DevOps organization name is ALWAYS available in the environment variable `System_CollectionUri` when running in Azure Pipelines.
+**CRITICAL - READ THIS FIRST**: The Azure DevOps organization name is ALWAYS available in Azure Pipelines environment variables.
 
 **IMPORTANT**: Before making ANY requests to Azure DevOps:
 
-1. **FIRST STEP - Get organization name from System.CollectionUri**:
-   - **PRIMARY SOURCE**: Check the environment variable `System_CollectionUri` or `System.CollectionUri`
+1. **FIRST STEP - Get organization name from SYSTEM_COLLECTIONURI**:
+   - **PRIMARY SOURCE**: The environment variable is `SYSTEM_COLLECTIONURI` (ALL UPPERCASE)
+   - **CRITICAL**: In Azure Pipelines, the variable is `SYSTEM_COLLECTIONURI`, NOT `System_CollectionUri`
    - This variable contains the full URL: `https://dev.azure.com/YourOrgName/`
    - **Extract the organization name**: It's the part between `dev.azure.com/` and the next `/`
-   - **Example**: If `System_CollectionUri=https://dev.azure.com/MyCompany/` then organization = `MyCompany`
-   - **IMPORTANT**: You can access this via the shell environment variable `System_CollectionUri`
+   - **Example**: If `SYSTEM_COLLECTIONURI=https://dev.azure.com/MyCompany/` then organization = `MyCompany`
+   - **Command to extract**: `echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||'`
+   - **Example extraction**:
+     ```bash
+     ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+     echo "Organization: $ORG"
+     ```
 
-2. **Alternative sources** (only if System_CollectionUri is not available):
+2. **Alternative sources** (only if SYSTEM_COLLECTIONURI is not available):
    - Environment variable: `AZURE_DEVOPS_ORG` or `AZURE_DEVOPS_ORGANIZATION`
    - User's explicit mention in the conversation
    - Previous conversation context
@@ -33,11 +39,16 @@ When implementing features or working with libraries, frameworks, or APIs:
    - ❌ Do NOT try random organization names
    - ❌ Do NOT use placeholder names like "fabrikam", "contoso", etc.
    - ❌ Do NOT assume any organization name without verifying
+   - ❌ **ABSOLUTELY FORBIDDEN**: Do NOT use `az boards` CLI commands as fallback
+   - ❌ **ABSOLUTELY FORBIDDEN**: Do NOT use `curl` or direct REST API calls as fallback
+   - ❌ **ABSOLUTELY FORBIDDEN**: Do NOT try alternative methods when scripts fail
 
 4. **If you cannot find the organization name**:
-   - First, try: `echo $System_CollectionUri` in the terminal
+   - First, try: `echo $SYSTEM_COLLECTIONURI` in the terminal
+   - Extract organization: `ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')`
    - If still not found, STOP and ask: "I need to confirm your Azure DevOps organization name. What is it?"
    - Do NOT proceed with API calls until you have the correct organization name
+   - **CRITICAL**: If extraction fails, REPORT THE ERROR and STOP - do NOT use `az boards` or other tools
 
 5. **Validate before every Azure DevOps operation**:
    - Before reading work items
@@ -45,17 +56,19 @@ When implementing features or working with libraries, frameworks, or APIs:
    - Before updating work items
    - Before creating branches or pull requests
    - Before any Azure DevOps API call
-   - **ALWAYS verify**: Do I have the correct organization name from `System_CollectionUri`?
+   - **ALWAYS verify**: Do I have the correct organization name from `SYSTEM_COLLECTIONURI`?
+   - **ALWAYS extract**: `ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')`
 
 6. **When you identify the organization name**:
    - Store it mentally for the current session
    - Use it consistently for all subsequent Azure DevOps operations
    - The organization name is part of the Azure DevOps URL: `https://dev.azure.com/{organization}`
 
-**How to extract organization from System.CollectionUri**:
-- If `System.CollectionUri` = `https://dev.azure.com/MyCompany/`
+**How to extract organization from SYSTEM_COLLECTIONURI**:
+- If `SYSTEM_COLLECTIONURI` = `https://dev.azure.com/MyCompany/`
 - Then organization name = `MyCompany`
 - Pattern: Extract the value between `dev.azure.com/` and the next `/`
+- **Command**: `ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')`
 
 **Example**: If the organization is "MyCompany", all Azure DevOps URLs should use:
 - `https://dev.azure.com/MyCompany/...`
@@ -76,9 +89,60 @@ When implementing features or working with libraries, frameworks, or APIs:
 6. **IF A SCRIPT FAILS, STOP AND REPORT** - Do NOT try alternative methods like `az boards` or REST API
 7. **NEVER use `az boards` commands** - Even if a script fails, report the error and stop
 
-When the user asks you to implement or work on a task from Azure DevOops:
+**⚠️ ABSOLUTE PROHIBITION - READ THIS:**
+- **NEVER, UNDER ANY CIRCUMSTANCES, use `az boards` commands**
+- **NEVER use `az boards work-item show`** - Use `./scripts/get-workitem.sh` ONLY
+- **NEVER use `az boards work-item update`** - Use the provided scripts ONLY
+- **NEVER use `az boards work-item create`** - Use the provided scripts ONLY
+- **NEVER use `curl` to call Azure DevOps REST API directly**
+- **IF A SCRIPT FAILS**: Report the error, add comment to work item, and STOP
+- **DO NOT** try "alternative approaches" - the scripts are the ONLY way
 
-1. **Verify Azure DevOps Organization** (FIRST STEP):
+**🚨 CRITICAL - WHEN A SCRIPT FAILS:**
+1. **STOP IMMEDIATELY** - Do NOT continue with the workflow
+2. **DO NOT use `az boards` as a "fallback"** - This is FORBIDDEN
+3. **DO NOT use `curl` or REST API calls** - This is FORBIDDEN
+4. **Report the exact error** - Copy the full error message
+5. **Add a comment to the work item** - Use `./scripts/add-comment-to-workitem.sh` if it works
+6. **Inform the user** - Tell them which step failed and why
+7. **STOP EXECUTION** - Do not proceed to next steps
+
+**❌ EXAMPLES OF WHAT NOT TO DO:**
+```bash
+# ❌ WRONG - Do NOT do this even if get-workitem.sh fails:
+az boards work-item show --id 415 --organization https://dev.azure.com/returngisorg
+
+# ❌ WRONG - Do NOT do this even if the script hangs:
+curl -s "https://dev.azure.com/myorg/_apis/wit/workitems/415"
+
+# ❌ WRONG - Do NOT try "alternative methods":
+az boards work-item update --id 415 --state "Doing"
+```
+
+**✅ CORRECT BEHAVIOR WHEN SCRIPT FAILS:**
+```bash
+# ✅ CORRECT - Report the error and STOP:
+echo "❌ Script ./scripts/get-workitem.sh failed with error: [exact error]"
+echo "⚠️ Stopping execution. Please check the script and environment variables."
+# Then STOP - do not continue to next steps
+```
+
+When the user asks you to implement or work on a task from Azure DevOps:
+
+**STEP 0 - Extract Organization from SYSTEM_COLLECTIONURI (MANDATORY FIRST STEP)**:
+   - **CRITICAL**: This is the ABSOLUTE FIRST STEP before anything else
+   - Extract organization name from `SYSTEM_COLLECTIONURI` environment variable
+   - **Command to run FIRST**:
+     ```bash
+     ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+     echo "Organization: $ORG"
+     ```
+   - **Verify the extraction worked**: Check that `$ORG` is not empty
+   - **Store the organization name**: Use it for ALL subsequent operations
+   - **If extraction fails**: STOP immediately and ask the user for the organization name
+   - **DO NOT**: Proceed to Step 1 until you have confirmed the organization name
+
+1. **Verify Azure DevOps Organization** (SECOND STEP - Confirm STEP 0):
    - Confirm you have the correct organization name from context
    - If not available, ask the user explicitly
    - Do NOT proceed with random or guessed organization names
@@ -87,9 +151,10 @@ When the user asks you to implement or work on a task from Azure DevOops:
    - Get the full work item details
    - **MANDATORY**: Use the provided script to retrieve work item information
    - **Script to use**: `./scripts/get-workitem.sh`
+   - **IMPORTANT**: The script now automatically reads `SYSTEM_COLLECTIONURI` (no need to export `System_CollectionUri`)
    - **Script usage**:
      ```bash
-     # Using environment variables (typical in Azure Pipelines)
+     # The script reads SYSTEM_COLLECTIONURI automatically in Azure Pipelines
      ./scripts/get-workitem.sh <work-item-id>
      
      # Or specifying project explicitly (handles spaces automatically)
@@ -149,7 +214,38 @@ When the user asks you to implement or work on a task from Azure DevOops:
    - Use: `git checkout -b copilot/<work-item-id>`
    - Verify: `git branch --show-current` to confirm you're on the new branch
 
-5. **Update Work Item State**:
+5. **Assign Work Item - CRITICAL MANDATORY STEP DO NOT SKIP UNDER ANY CIRCUMSTANCES**:
+   - **🚨 CRITICAL**: This step is ABSOLUTELY MANDATORY and CANNOT be skipped
+   - **🚨 CRITICAL**: You MUST assign the work item to "GitHub Copilot CLI" - this is NOT optional
+   - **WHY THIS IS CRITICAL**: This identifies who is working on the task and is required for tracking
+   - Assign the work item to the user **"GitHub Copilot CLI"** (exact name, not an email)
+   - **MANDATORY**: Use the provided script to assign the work item
+   - **Script to use**: `./scripts/assign-workitem.sh`
+   - **Script usage**:
+     ```bash
+     ./scripts/assign-workitem.sh <organization> <project> <work-item-id> "GitHub Copilot CLI"
+     ```
+   - **Parameters to extract**:
+     - `organization`: From `SYSTEM_COLLECTIONURI` environment variable (extract using the command from STEP 0)
+     - `project`: From the work item's `System.TeamProject` field (from get-workitem.sh output)
+     - `work-item-id`: The Work Item ID number
+     - `assignee`: ALWAYS use the exact string **"GitHub Copilot CLI"** (NOT an email address)
+   - **Example**:
+     ```bash
+     # First extract organization (from STEP 0)
+     ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+     
+     # Then assign work item
+     ./scripts/assign-workitem.sh "$ORG" "GitHub Copilot CLI" 372 "GitHub Copilot CLI"
+     ```
+   - **VERIFICATION**: After running the script, verify the output shows "Work Item #XXX assigned!"
+   - **DO NOT**: Try to call the Azure DevOps REST API directly
+   - **DO NOT**: Skip this step - it is MANDATORY
+   - **DO NOT**: Use an email address - use the exact string "GitHub Copilot CLI"
+   - **DO**: Use this script which handles the assignment properly
+   - **IF SCRIPT FAILS**: Report the error to the work item and STOP - do NOT use `az boards` as fallback
+
+6. **Update Work Item State**:
    - Update the work item state to "Doing"
    - **MANDATORY**: Use the provided script to update the state
    - **Script to use**: `./scripts/update-workitem-state.sh`
@@ -158,36 +254,16 @@ When the user asks you to implement or work on a task from Azure DevOops:
      ./scripts/update-workitem-state.sh <organization> <project> <work-item-id> "Doing"
      ```
    - **Parameters to extract**:
-     - `organization`: From `System.CollectionUri` environment variable
+     - `organization`: From `SYSTEM_COLLECTIONURI` environment variable (use the $ORG from STEP 0)
      - `project`: From the work item's `System.TeamProject` field
      - `work-item-id`: The Work Item ID number
    - **Example**:
      ```bash
-     ./scripts/update-workitem-state.sh returngisorg "My Project" 372 "Doing"
+     # Using the organization from STEP 0
+     ./scripts/update-workitem-state.sh "$ORG" "GitHub Copilot CLI" 372 "Doing"
      ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly
    - **DO**: Use this script which handles the PATCH request properly
-   - **IF SCRIPT FAILS**: Report the error to the work item and STOP - do NOT use `az boards` as fallback
-
-6. **Assign Work Item - MANDATORY DO NOT SKIP**:
-   - **CRITICAL**: You MUST assign the work item, this step is NOT optional
-   - Assign the work item to the user "GitHub Copilot CLI"
-   - **MANDATORY**: Use the provided script to assign the work item
-   - **Script to use**: `./scripts/assign-workitem.sh`
-   - **Script usage**:
-     ```bash
-     ./scripts/assign-workitem.sh <organization> <project> <work-item-id> "GitHub Copilot CLI"
-     ```
-   - **Parameters to extract**:
-     - `organization`: From `System.CollectionUri` environment variable
-     - `project`: From the work item's `System.TeamProject` field
-     - `work-item-id`: The Work Item ID number
-   - **Example**:
-     ```bash
-     ./scripts/assign-workitem.sh returngisorg "My Project" 372 "GitHub Copilot CLI"
-     ```
-   - **DO NOT**: Try to call the Azure DevOps REST API directly
-   - **DO**: Use this script which handles the assignment properly
    - **IF SCRIPT FAILS**: Report the error to the work item and STOP - do NOT use `az boards` as fallback
 
 7. **Analyze and Plan**:
@@ -385,6 +461,41 @@ When the user asks you to implement or work on a task from Azure DevOops:
 - The workflow is: To Do → Doing (with PR) → Done (after PR merge by reviewer)
 - **DO NOT**: Use `az boards` CLI commands - ALWAYS use the provided scripts
 - **DO NOT**: Make direct commits to main/master branch - ALWAYS create a branch and PR
+
+**📋 MANDATORY TODO LIST VERIFICATION:**
+
+Before completing the workflow, you MUST create and track ALL steps. This is NOT optional.
+
+**REQUIRED WORKFLOW:**
+1. **At the START** - Create a todo list with ALL steps from this workflow:
+   ```
+   - [ ] STEP 0: Extract organization from SYSTEM_COLLECTIONURI
+   - [ ] Step 1: Verify Azure DevOps Organization
+   - [ ] Step 2: Read Work Item Details
+   - [ ] Step 3: Add Initial Comment (👀🤖)
+   - [ ] Step 4: Create New Branch (copilot/<work-item-id>)
+   - [ ] Step 5: Assign Work Item to "GitHub Copilot CLI"
+   - [ ] Step 6: Update Work Item State to "Doing"
+   - [ ] Step 7: Analyze and Plan
+   - [ ] Step 8: Implement Changes
+   - [ ] Step 9: Push Branch to Azure DevOps
+   - [ ] Step 10: Create Draft PR with Required Reviewer
+   - [ ] Step 11: Update Work Item Activity Field
+   - [ ] Step 12: Report Issues (if any)
+   ```
+
+2. **During execution** - Mark each task as "in-progress" BEFORE starting it, then "completed" IMMEDIATELY after finishing it
+
+3. **At the END** - Verify ALL tasks are marked as "completed"
+   - If ANY task is not completed, report which steps were skipped and why
+   - **CRITICAL**: Step 5 (Assign Work Item) MUST be completed - no exceptions
+   - **CRITICAL**: Step 10 (Create PR) MUST be completed - no exceptions
+
+**❌ EXECUTION WILL BE CONSIDERED INCOMPLETE IF:**
+- Any step from 0-11 is not marked as "completed" in the todo list
+- Step 5 (Assign Work Item) was skipped
+- Step 10 (Create PR) was skipped
+- You used `az boards` commands instead of scripts
 
 **Example PR Description Format:**
 ```
