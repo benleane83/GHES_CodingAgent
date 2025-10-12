@@ -96,21 +96,133 @@ steps:
     displayName: 📦 Install Copilot CLI
 
   - bash: |
-      echo "🤖 Running GitHub Copilot CLI to implement changes"
-      copilot \
-      -p "Quiero implementar los cambios necesarios en el work item $(WorkItemId) de Azure DevOps project '$(ProjectName)'" \
-      --model $(MODEL) \
+      echo "📝 Reading work item details..."
+      ./scripts/get-workitem.sh $(WorkItemId) "$(ProjectName)"
+    displayName: 📖 Step 1 - Read Work Item Details
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "💬 Adding initial comment to work item..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      ./scripts/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "👀🤖 <b>GitHub Copilot</b> started working on this task"
+    displayName: 💬 Step 2 - Add Initial Comment in the work item
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🌿 Creating feature branch..."
+      git config user.email "copilot-cli@azure.com"
+      git config user.name "GitHub Copilot CLI"
+      git checkout -b copilot/$(WorkItemId)
+      echo "✅ Branch copilot/$(WorkItemId) created"
+      git branch --show-current
+    displayName: 🌿 Step 3 - Create Feature Branch
+
+  - bash: |
+      echo "👤 Assigning work item to GitHub Copilot CLI..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      ./scripts/assign-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "GitHub Copilot CLI"
+    displayName: 👤 Step 4 - Assign Work Item to GitHub Copilot
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🔄 Updating work item state to 'Doing'..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      ./scripts/update-workitem-state.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Doing"
+    displayName: 🔄 Step 5 - Update State to Doing
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🤖 Running GitHub Copilot CLI to implement changes..."
+      echo "═══════════════════════════════════════════════════════════"
+      echo "📋 Work Item: $(WorkItemId)"
+      echo "📌 Title: $(WorkItemTitle)"
+      echo "📁 Project: $(ProjectName)"
+      echo "═══════════════════════════════════════════════════════════"     
+    
+      
+      copilot -p "Analiza la descripción del work item y realiza los cambios necesarios en el código del repositorio para completar la tarea: Título: $(WorkItemTitle). Descripción: $(WorkItemDescription)" \     
       --allow-all-tools \
       --log-level debug \
       --log-dir ./logs
-    displayName: 🚀 Implement Changes
+
+    displayName: 🤖 Step 6 - Implement Changes with Copilot
+    name: CopilotStep
     env:
       GH_TOKEN: $(GH_TOKEN)
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
       CONTEXT7_API_KEY: $(CONTEXT7_API_KEY)
+
+  - bash: |
+      echo "📝 Committing changes..."
+      
+      # Extract creator info from work item
+      CREATOR_INFO=$(./scripts/get-workitem.sh $(WorkItemId) "$(ProjectName)")
+      CREATOR_NAME=$(echo "$CREATOR_INFO" | grep "Created By Name:" | sed 's/Created By Name:[[:space:]]*//')
+      CREATOR_EMAIL=$(echo "$CREATOR_INFO" | grep "Created By Email:" | sed 's/Created By Email:[[:space:]]*//')
+      
+      git add .
+      
+      # Create commit message with co-author
+      git commit -m "feat: Implement work item $(WorkItemId)" \
+                 -m "" \
+                 -m "$(WorkItemTitle)" \
+                 -m "" \
+                 -m "Changes implemented by GitHub Copilot CLI" \
+                 -m "" \
+                 -m "" \
+                 -m "Co-authored-by: ${CREATOR_NAME} <${CREATOR_EMAIL}>"
+      
+      echo "✅ Changes committed"
+    displayName: 💾 Step 7 - Commit Changes
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🚀 Pushing branch to remote..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      
+      # URL encode the project name
+      PROJECT_ENCODED=$(echo "$(ProjectName)" | jq -sRr @uri)
+      
+      # Configure git remote with PAT
+      git remote set-url origin "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/${ORG}/${PROJECT_ENCODED}/_git/$(Build.Repository.Name)"
+      
+      git push -u origin copilot/$(WorkItemId)
+      
+      echo "✅ Branch pushed successfully"
+    displayName: 🚀 Step 8 - Push Branch
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🔧 Updating work item activity..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      ./scripts/update-workitem-activity.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Development"
+    displayName: 🔧 Step 9 - Update Activity
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "📬 Creating Pull Request..."
+      ./scripts/create-pullrequest.sh $(WorkItemId) \
+        $(WorkItemTitle) \
+        $(ProjectName) \
+        $(BUILD_REPOSITORY_NAME) \
+        $(echo $BUILD_SOURCEBRANCH | sed 's#refs/heads/##')
+
+      echo "✅ Pull Request created successfully"
+    displayName: 📬 Step 10 - Create Pull Request
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+      AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: 'logs'
       artifact: 'copilot-logs'
     displayName: 📦 Publish Logs
+    condition: always()
