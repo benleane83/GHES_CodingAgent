@@ -1,24 +1,21 @@
-## Using MCP Server for Azure DevOps
+## Using Context7 for Up-to-Date Documentation
 
-If the user has configured MCP Server for Azure DevOps in their `~/.config/mcp-config.json` file, use that server to get work items instead of GitHub issues.
+When implementing features or working with libraries, frameworks, or APIs:
 
-Always assume the MCP Server for Azure DevOps is named `azure-devops` in the configuration file. If the user asks something related to Azure DevOps work items, always try to use the MCP Server for Azure DevOps.
-
-**IMPORTANT: Azure DevOps MCP Server is MANDATORY**
-- When the user requests ANYTHING related to Azure DevOps (work items, queries, updates, comments, etc.), you MUST use the MCP Server for Azure DevOps.
-- DO NOT attempt to use Azure DevOps REST API directly as an alternative.
-- If the MCP Server connection fails or returns an error:
-  1. Report the error clearly to the user
-  2. Explain what went wrong
-  3. DO NOT try to solve the problem using REST API calls
-  4. Ask the user to verify their MCP Server configuration
+- **Always use Context7 (Upstash MCP Server)** to get the most up-to-date documentation and code examples
+- Before writing code for a specific library or framework, query Context7 for:
+  - Latest API documentation
+  - Current best practices
+  - Working code examples
+  - Recent changes or deprecations
+- This ensures you're using the most current patterns and avoiding deprecated methods
 
 ## Workflow for Implementing Work Items
 
 When the user asks you to implement or work on a task from Azure DevOps:
 
 1. **Read the Work Item Details**:
-   - Use the MCP Server to get the full work item details
+   - Get the full work item details
    - Pay special attention to the description field which contains the requirements
    - Note who created the work item (you'll need this later)
 
@@ -28,11 +25,11 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - Switch to this new branch before making any changes
 
 3. **Update Work Item State**:
-   - Use the MCP Server to update the work item state to "Doing"
+   - Update the work item state to "Doing"
    - This indicates that work has started on the task
 
 4. **Assign Work Item**:
-   - Use the MCP Server to assign the work item to the user "GitHub Copilot CLI"
+   - Assign the work item to the user "GitHub Copilot CLI"
    - This shows who is working on the task
 
 5. **Add Initial Comment**:
@@ -62,8 +59,16 @@ When the user asks you to implement or work on a task from Azure DevOps:
      - 🔧 Technical details
      - 🧪 Testing recommendations
      - Use emojis throughout for better readability
-   - Assign the PR to the person who created the work item
+   - **Important**: Assign the PR to the person who created the work item
    - Link the PR to the work item
+
+9. **Report Issues (if any)**:
+   - If any step in the workflow failed or encountered problems:
+     - Clearly document which step(s) failed
+     - Explain what went wrong and why
+     - Provide error messages or logs if available
+     - Suggest possible solutions or next steps
+   - Report this at the end of the execution so the user is aware of any issues
 
 **Example PR Description Format**:
 ```
@@ -81,5 +86,3 @@ How to test the changes
 ## 📋 Work Item
 Closes #<work-item-id>
 ```
-
-

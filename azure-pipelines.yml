@@ -10,8 +10,7 @@ resources:
 
 variables:
   - group: 'GitHub Copilot CLI'
-  # No puedes definir env variables aquí, pero puedes usarlas con $(variable)
-  # Las variables del Variable Group están disponibles como $(GH_TOKEN) y $(AZURE_DEVOPS_EXT_PAT)
+
 
 steps:
   - script: echo "🚀 Webhook triggered pipeline started!"
@@ -93,70 +92,6 @@ steps:
   - bash: |
       npm install -g @github/copilot     
     displayName: 📦 Install Copilot CLI
-
-  - bash: |
-      echo "🔍 Verificando variables de entorno..."
-      echo ""
-      
-      if [ -z "$GH_TOKEN" ]; then
-        echo "❌ ERROR: GH_TOKEN no está definido o está vacío"
-        exit 1
-      else
-        echo "✅ GH_TOKEN está definido (longitud: ${#GH_TOKEN} caracteres)"
-      fi
-      
-      if [ -z "$AZURE_DEVOPS_PAT" ]; then
-        echo "❌ ERROR: AZURE_DEVOPS_PAT no está definido o está vacío"
-        exit 1
-      else
-        echo "✅ AZURE_DEVOPS_PAT está definido (longitud: ${#AZURE_DEVOPS_PAT} caracteres)"
-      fi
-      
-      echo ""
-      echo "✅ Todas las variables necesarias están configuradas correctamente"
-    displayName: ✅ Verify Credentials
-    env:
-      GH_TOKEN: $(GH_TOKEN)
-      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
-
-  - bash: |
-      echo "🔐 Authenticating with Azure DevOps..."
-      
-      # Set the PAT as environment variable for Azure DevOps CLI
-      export AZURE_DEVOPS_EXT_PAT=$AZURE_DEVOPS_PAT
-      
-      # Configure Azure DevOps CLI defaults
-      az devops configure --defaults organization=https://dev.azure.com/returngisorg project="$(ProjectName)"
-      
-      # Verify authentication
-      echo "✅ Azure DevOps CLI configured successfully"
-      echo "   Organization: https://dev.azure.com/returngisorg"
-      echo "   Project: $(ProjectName)"
-    displayName: 🔐 Azure DevOps Login
-    env:
-      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
-
-  # - bash: |
-  #     echo "🤖 Running GitHub Copilot CLI to test that it works"     
-  #     copilot -p "Puedes decirme de qué trata este proyecto" --allow-all-tools
-  #   displayName: 🤖 Verify GitHub Copilot CLI Installation
-  #   env:
-  #     GH_TOKEN: $(GH_TOKEN)
-  # - bash: |
-  #     cp mcp-config.json ~/.copilot/mcp-config.json
-  #   displayName: Copiar el archivo de los MCP servers en ~/.copilot
-
-  # - bash: |
-  #     echo "🤖 Running GitHub Copilot CLI to get work item details"
-  #     copilot \
-  #     -p "Get the details of work item ID $(WorkItemId) from Azure DevOps project '$(ProjectName)'. Show me all the information including title, description, assigned to, state, and any other relevant fields." \
-  #     --allow-all-tools \
-  #     --log-level debug \
-  #     --log-dir ./logs
-  #   displayName: 🤖 Get Work Item details via Copilot CLI
-  #   env:
-  #     GH_TOKEN: $(GH_TOKEN)
-  #     AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   - bash: |
       echo "🤖 Running GitHub Copilot CLI to implement changes"

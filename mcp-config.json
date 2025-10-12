@@ -1,17 +1,16 @@
 {
     "mcpServers": {
-        "azure-devops": {
-            "type": "local",
-            "command": "npx",
+        "context7": {
             "tools": [
                 "*"
             ],
+            "type": "stdio",
+            "command": "npx",
             "args": [
                 "-y",
-                "@azure-devops/mcp",
-                "returngisorg",
-                "-a",
-                "azcli"
+                "@upstash/context7-mcp",
+                "--api-key",
+                "YOUR_API_KEY"
             ]
         }
     }
