@@ -53,10 +53,14 @@ echo "Work Item ID: $WORK_ITEM_ID"
 echo "Comment: $COMMENT_TEXT"
 echo ""
 
-# Codificar PAT en Base64
-PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64)
+# Codificar PAT en Base64 (sin saltos de línea)
+if base64 --help 2>&1 | grep -q "wrap"; then
+    PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 -w 0)
+else
+    PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 | tr -d '\n')
+fi
 
-# Endpoint para añadir comentario
+# Endpoint para agregar comentario
 API_URL="https://dev.azure.com/${ORGANIZATION}/${PROJECT_ENCODED}/_apis/wit/workItems/${WORK_ITEM_ID}/comments?api-version=7.0-preview.3"
 
 # Request Body

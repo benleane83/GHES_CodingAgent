@@ -64,8 +64,12 @@ echo "Title: $TITLE"
 echo "Reviewer Email: $REVIEWER_EMAIL"
 echo ""
 
-# Codificar PAT en Base64
-PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64)
+# Codificar PAT en Base64 (sin saltos de línea)
+if base64 --help 2>&1 | grep -q "wrap"; then
+    PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 -w 0)
+else
+    PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 | tr -d '\n')
+fi
 
 # Paso 1: Obtener el Identity ID del reviewer
 echo "📋 Step 1: Finding reviewer Identity ID..."

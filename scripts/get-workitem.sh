@@ -17,7 +17,8 @@ show_usage() {
     echo "  AZURE_DEVOPS_PAT         : Personal Access Token for authentication (required)"
     echo "  SYSTEM_COLLECTIONURI     : Azure DevOps organization URL (required, Azure Pipelines format)"
     echo "  System_CollectionUri     : Azure DevOps organization URL (alternative format)"
-    echo "  System_TeamProject       : Project name (used if project argument not provided)"
+    echo "  SYSTEM_TEAMPROJECT       : Project name (Azure Pipelines format, used if project argument not provided)"
+    echo "  System_TeamProject       : Project name (alternative format, used if project argument not provided)"
     echo ""
     echo "Examples:"
     echo "  $0 412"
@@ -36,12 +37,15 @@ fi
 WORK_ITEM_ID="$1"
 
 # Obtener el proyecto (argumento o variable de entorno)
+# Azure Pipelines usa SYSTEM_TEAMPROJECT (mayúsculas)
 if [ $# -eq 2 ]; then
     PROJECT="$2"
+elif [ -n "$SYSTEM_TEAMPROJECT" ]; then
+    PROJECT="$SYSTEM_TEAMPROJECT"
 elif [ -n "$System_TeamProject" ]; then
     PROJECT="$System_TeamProject"
 else
-    echo "❌ Error: Project name not provided and System_TeamProject environment variable is not set"
+    echo "❌ Error: Project name not provided and neither SYSTEM_TEAMPROJECT nor System_TeamProject environment variable is set"
     echo ""
     show_usage
 fi
@@ -66,18 +70,31 @@ if [ -z "$AZURE_DEVOPS_PAT" ]; then
     exit 1
 fi
 
-# URL-encode el nombre del proyecto
-PROJECT_ENCODED=$(echo "$PROJECT" | sed 's/ /%20/g')
+# URL-encode el nombre del proyecto usando jq para mejor compatibilidad
+# Si jq no está disponible, usar sed como fallback
+if command -v jq &> /dev/null; then
+    PROJECT_ENCODED=$(echo -n "$PROJECT" | jq -sRr @uri)
+else
+    PROJECT_ENCODED=$(echo "$PROJECT" | sed 's/ /%20/g')
+fi
 
 echo "🔍 Retrieving Work Item from Azure DevOps"
 echo "=========================================="
 echo "Organization: $ORGANIZATION"
 echo "Project: $PROJECT"
+echo "Project (encoded): $PROJECT_ENCODED"
 echo "Work Item ID: $WORK_ITEM_ID"
 echo ""
 
-# Codificar PAT en Base64
-PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64)
+# Codificar PAT en Base64 (sin saltos de línea)
+# Usar -w 0 para evitar saltos de línea en sistemas Linux
+if base64 --help 2>&1 | grep -q "wrap"; then
+    # GNU base64 (Linux)
+    PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 -w 0)
+else
+    # BSD base64 (macOS) o sistemas sin -w
+    PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 | tr -d '\n')
+fi
 
 # Obtener el work item
 API_URL="https://dev.azure.com/${ORGANIZATION}/${PROJECT_ENCODED}/_apis/wit/workitems/${WORK_ITEM_ID}?api-version=7.0"

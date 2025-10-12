@@ -53,8 +53,12 @@ echo "Work Item ID: $WORK_ITEM_ID"
 echo "New State: $NEW_STATE"
 echo ""
 
-# Codificar PAT en Base64
-PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64)
+# Codificar PAT en Base64 (sin saltos de línea)
+if base64 --help 2>&1 | grep -q "wrap"; then
+    PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 -w 0)
+else
+    PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 | tr -d '\n')
+fi
 
 # Endpoint para actualizar work item
 API_URL="https://dev.azure.com/${ORGANIZATION}/${PROJECT_ENCODED}/_apis/wit/workitems/${WORK_ITEM_ID}?api-version=7.0"
