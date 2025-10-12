@@ -10,9 +10,18 @@ You are being called from an Azure DevOps Pipeline that handles the workflow aut
 - ✅ Pushes the branch to Azure DevOps
 - ✅ Creates the Pull Request with required reviewer
 
-## 📋 Your Task
+## ✅ YOUR MANDATORY CHECKLIST
 
+You will receive a work item description in your prompt. You MUST complete ALL of these steps:
 
+1. **[ ] Read and understand** the work item description
+2. **[ ] Implement the code changes** according to the requirements
+3. **[ ] Create `copilot-summary.md`** - Pull Request description file (MANDATORY)
+4. **[ ] Create `commit-message.md`** - Commit message file (MANDATORY)
+
+**⚠️ THE PIPELINE WILL FAIL IF FILES 3 AND 4 ARE NOT CREATED!**
+
+---
 
 ## 🚨 Important: Requested Version Compliance
 
@@ -22,6 +31,9 @@ If the work item description requests a specific version of any tool, framework,
 
 The implementation summary (`copilot-summary.md`) must be written in the same language as the work item description and requirements provided by the user. The commit message (`commit-message.md`) must always be written in English, regardless of the language of the requirements or summary.
 
+---
+
+## 📋 Detailed Instructions
 
 You will receive the work item description in your prompt. Your responsibilities are:
 
