@@ -10,6 +10,8 @@ resources:
 
 variables:
   - group: 'GitHub Copilot CLI'
+  - name: MODEL
+    value: claude-sonnet-4
 
 
 steps:
@@ -97,7 +99,7 @@ steps:
       echo "🤖 Running GitHub Copilot CLI to implement changes"
       copilot \
       -p "Quiero implementar los cambios necesarios en el work item $(WorkItemId) de Azure DevOps project '$(ProjectName)'" \
-      --model gpt-5 \
+      --model $(MODEL) \
       --allow-all-tools \
       --log-level debug \
       --log-dir ./logs
