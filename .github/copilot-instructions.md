@@ -88,6 +88,21 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - **Important**: Use HTML format for comments, not Markdown
    - Azure DevOps work item comments use HTML editor
    - Example: Use `<b>bold</b>` instead of `**bold**`, `<br>` instead of line breaks, etc.
+   - **MANDATORY**: Use the Azure DevOps REST API to add comments
+   - **REST API Details**:
+     - Endpoint: `POST https://dev.azure.com/{organization}/{project}/_apis/wit/workItems/{workItemId}/comments?api-version=7.0-preview.3`
+     - Headers: 
+       - `Content-Type: application/json`
+       - `Authorization: Bearer {PAT}` (use the `AZURE_DEVOPS_PAT` environment variable)
+     - Request Body: `{ "text": "your comment text in HTML format" }`
+     - Example request:
+       ```bash
+       curl -X POST \
+         "https://dev.azure.com/{organization}/{project}/_apis/wit/workItems/{workItemId}/comments?api-version=7.0-preview.3" \
+         -H "Content-Type: application/json" \
+         -H "Authorization: Basic {Base64EncodedPAT}" \
+         -d '{"text": "👀🤖 Started working on this task"}'
+       ```
 
 7. **Analyze and Plan**:
    - Carefully analyze the work item description
@@ -108,6 +123,22 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - **IMPORTANT**: Create the Pull Request in **Draft** mode (not ready for review)
    - **IMPORTANT**: Assign the PR to the person who created the work item (from `System.CreatedBy` field)
    - **IMPORTANT**: Add the work item creator as a **Required Reviewer** - you cannot complete the PR yourself
+   - **MANDATORY**: Use the Azure DevOps REST API to add reviewers
+   - **REST API Details for adding reviewers**:
+     - Endpoint: `PUT https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/reviewers/{reviewerId}?api-version=6.1-preview.1`
+     - Headers:
+       - `Content-Type: application/json`
+       - `Authorization: Basic {Base64EncodedPAT}` (use the `AZURE_DEVOPS_PAT` environment variable)
+     - Request Body: Object with `id` and `isRequired` properties
+     - Example to add a required reviewer:
+       ```bash
+       curl -X PUT \
+         "https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/reviewers/{reviewerId}?api-version=6.1-preview.1" \
+         -H "Content-Type: application/json" \
+         -H "Authorization: Basic {Base64EncodedPAT}" \
+         -d '{"id": "{userId}", "isRequired": true}'
+       ```
+     - Extract the user ID from the work item's `System.CreatedBy` field
    - **IMPORTANT**: Add the tag "copilot" to the PR
    - Analyze the changes and add additional relevant tags based on the work done:
      - Consider tags like: `feature`, `bugfix`, `refactor`, `documentation`, `performance`, `security`, `testing`, etc.
@@ -124,6 +155,13 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - Set the work item's "Activity" field based on what was requested in the work item
    - Common Activity values: `Development`, `Testing`, `Design`, `Documentation`, `Deployment`, `Requirements`, etc.
    - Choose the most appropriate value based on the work item description and implementation
+   - **Activity field options**:
+     - `Deployment` - For deployment-related tasks, CI/CD, infrastructure
+     - `Design` - For architectural design, UI/UX design work
+     - `Development` - For coding, implementation, feature development (most common)
+     - `Documentation` - For writing docs, README updates, code comments
+     - `Requirements` - For gathering or defining requirements
+     - `Testing` - For writing tests, QA work, test automation
 
 11. **Report Issues (if any)**:
    - If any step in the workflow failed or encountered problems:
@@ -135,6 +173,7 @@ When the user asks you to implement or work on a task from Azure DevOps:
      - If unable to push the branch: Explain the error and likely permission issues
      - If unable to create the PR: Detail the error and suggest permission fixes
      - Add this information to the work item as a comment so the user can see it in Azure DevOps
+     - **Use the same REST API method** described in step 6 to add comments
    - Report this at the end of the execution so the user is aware of any issues
 
 **Example PR Description Format**:
