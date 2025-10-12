@@ -75,6 +75,8 @@ steps:
       echo "⚠️  Severity: ${{ parameters.myWebhookResource.resource.fields['Microsoft.VSTS.Common.Severity'] }}"
       echo "📋 Kanban Column: ${{ parameters.myWebhookResource.resource.fields['WEF_EB329F44FE5F4A94ACB1DA153FDF38BA_Kanban.Column'] }}"
       echo ""
+      echo "🏷️  Tags: ${{ parameters.myWebhookResource.resource.fields['System.Tags'] }}"
+      echo ""
       echo "🔗 Work Item URL: ${{ parameters.myWebhookResource.resource.url }}"
       echo ""
       echo "═══════════════════════════════════════════════════════════"
@@ -89,14 +91,15 @@ steps:
       echo "##vso[task.setvariable variable=WorkItemDescription]${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
       echo "##vso[task.setvariable variable=ProjectName]${{ parameters.myWebhookResource.resource.fields['System.TeamProject'] }}"
 
-      # Extract Repository Name from Description (format: Repository Name: TARGET_REPO)
-      REPO_LINE=$(echo "${{ parameters.myWebhookResource.resource.fields['System.Description'] }}" | grep -i '^Repository Name:' || true)
-      if [ -n "$REPO_LINE" ]; then
-        TARGET_REPO=$(echo "$REPO_LINE" | sed 's/Repository Name:[[:space:]]*//I')
-        echo "Target repository found: $TARGET_REPO"
+      # Extract Repository Name from Tags (format: repo:REPO_NAME)
+      TAGS="${{ parameters.myWebhookResource.resource.fields['System.Tags'] }}"
+      REPO_TAG=$(echo "$TAGS" | grep -oP 'repo:\S+' || true)
+      if [ -n "$REPO_TAG" ]; then
+        TARGET_REPO=$(echo "$REPO_TAG" | sed 's/repo://' | sed 's/;$//')
+        echo "🎯 Target repository found in tags: $TARGET_REPO"
         echo "##vso[task.setvariable variable=TargetRepoName]$TARGET_REPO"
       else
-        echo "No target repository specified in the work item description. Using current repository."
+        echo "⚠️  No target repository tag found. Using current repository."
         echo "##vso[task.setvariable variable=TargetRepoName]$(Build.Repository.Name)"
       fi
 
@@ -190,7 +193,7 @@ steps:
       echo "📦 Target Repository: $(TargetRepoName)"
       echo "═══════════════════════════════════════════════════════════"
       cd "$(TargetRepoDir)"
-      copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL)
+      copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL) --add-dir $(System.DefaultWorkingDirectory)/.github
     displayName: 🤖 Step 6 - Implement Changes with Copilot
     name: CopilotStep
     env:
