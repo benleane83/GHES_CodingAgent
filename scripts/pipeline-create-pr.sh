@@ -32,7 +32,7 @@ echo "📧 Creator Email: $CREATOR_EMAIL"
 PR_TITLE="AB#${WORK_ITEM_ID}: ${WORK_ITEM_TITLE}"
 
 # Create PR description
-PR_DESC=$(cat /tmp/copilot-summary.md)
+PR_DESC=$(cat copilot-summary.md)
 
 echo "📝 PR Title: $PR_TITLE"
 

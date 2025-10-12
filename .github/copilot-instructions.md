@@ -25,7 +25,7 @@ You will receive the work item description in your prompt. Your responsibilities
 
 ### 2. Generate Implementation Summary
 
-**CRITICAL**: You MUST create a summary file at `/tmp/copilot-summary.md`
+**CRITICAL**: You MUST create a summary file at `copilot-summary.md`
 
 This file will be used as the Pull Request description.
 
