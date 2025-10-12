@@ -12,34 +12,42 @@ When implementing features or working with libraries, frameworks, or APIs:
 
 ## Azure DevOps Organization Context
 
+**CRITICAL - READ THIS FIRST**: The Azure DevOps organization name is ALWAYS available in the environment variable `System_CollectionUri` when running in Azure Pipelines.
+
 **IMPORTANT**: Before making ANY requests to Azure DevOps:
 
-1. **Always check the user's context** for Azure DevOps organization information
-2. **Look for organization name** in these locations (in order of priority):
-   - **Azure Pipelines predefined variables**:
-     - `System.CollectionUri` - Full URL like `https://dev.azure.com/YourOrg/`
-     - `System.TeamFoundationCollectionUri` - Alternative variable name
-     - Extract organization name from these URLs (the part after `dev.azure.com/`)
-   - **Environment variables**:
-     - `AZURE_DEVOPS_ORG` or `AZURE_DEVOPS_ORGANIZATION`
-     - `System_CollectionUri` (when running in Azure Pipelines)
-   - MCP server context/configuration
+1. **FIRST STEP - Get organization name from System.CollectionUri**:
+   - **PRIMARY SOURCE**: Check the environment variable `System_CollectionUri` or `System.CollectionUri`
+   - This variable contains the full URL: `https://dev.azure.com/YourOrgName/`
+   - **Extract the organization name**: It's the part between `dev.azure.com/` and the next `/`
+   - **Example**: If `System_CollectionUri=https://dev.azure.com/MyCompany/` then organization = `MyCompany`
+   - **IMPORTANT**: You can access this via the shell environment variable `System_CollectionUri`
+
+2. **Alternative sources** (only if System_CollectionUri is not available):
+   - Environment variable: `AZURE_DEVOPS_ORG` or `AZURE_DEVOPS_ORGANIZATION`
+   - User's explicit mention in the conversation
    - Previous conversation context
-   - User's explicit mentions
 
-3. **NEVER guess or try random organization names**
-   - Do not attempt requests with placeholder organization names
-   - Do not try common organization names hoping one will work
-   - If the organization name is not available in context, **ASK the user explicitly** before proceeding
+3. **NEVER, EVER do this**:
+   - ❌ Do NOT guess organization names
+   - ❌ Do NOT try random organization names
+   - ❌ Do NOT use placeholder names like "fabrikam", "contoso", etc.
+   - ❌ Do NOT assume any organization name without verifying
 
-4. **Validate before every Azure DevOps operation**:
+4. **If you cannot find the organization name**:
+   - First, try: `echo $System_CollectionUri` in the terminal
+   - If still not found, STOP and ask: "I need to confirm your Azure DevOps organization name. What is it?"
+   - Do NOT proceed with API calls until you have the correct organization name
+
+5. **Validate before every Azure DevOps operation**:
    - Before reading work items
    - Before creating work items
    - Before updating work items
    - Before creating branches or pull requests
    - Before any Azure DevOps API call
+   - **ALWAYS verify**: Do I have the correct organization name from `System_CollectionUri`?
 
-5. **When you identify the organization name**:
+6. **When you identify the organization name**:
    - Store it mentally for the current session
    - Use it consistently for all subsequent Azure DevOps operations
    - The organization name is part of the Azure DevOps URL: `https://dev.azure.com/{organization}`
@@ -69,20 +77,8 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - Pay special attention to the description field which contains the requirements
    - Note who created the work item (you'll need this later)
 
-3. **Create a New Branch**:
-   - Create a new branch with the naming convention: `copilot/<work-item-id>`
-   - Example: `copilot/372` for work item #372
-   - Switch to this new branch before making any changes
-
-4. **Update Work Item State**:
-   - Update the work item state to "Doing"
-   - This indicates that work has started on the task
-
-5. **Assign Work Item**:
-   - Assign the work item to the user "GitHub Copilot CLI"
-   - This shows who is working on the task
-
-6. **Add Initial Comment**:
+3. **Add Initial Comment - DO THIS FIRST**:
+   - **CRITICAL**: This is the FIRST action before any implementation work
    - Add a comment to the work item discussion with these two emojis: 👀🤖
    - This signals that Copilot has started working on the task
    - **Important**: Use HTML format for comments, not Markdown
@@ -103,6 +99,19 @@ When the user asks you to implement or work on a task from Azure DevOps:
          -H "Authorization: Basic {Base64EncodedPAT}" \
          -d '{"text": "👀🤖 Started working on this task"}'
        ```
+
+4. **Create a New Branch**:
+   - Create a new branch with the naming convention: `copilot/<work-item-id>`
+   - Example: `copilot/372` for work item #372
+   - Switch to this new branch before making any changes
+
+5. **Update Work Item State**:
+   - Update the work item state to "Doing"
+   - This indicates that work has started on the task
+
+6. **Assign Work Item**:
+   - Assign the work item to the user "GitHub Copilot CLI"
+   - This shows who is working on the task
 
 7. **Analyze and Plan**:
    - Carefully analyze the work item description
@@ -150,6 +159,17 @@ When the user asks you to implement or work on a task from Azure DevOps:
      - 🧪 Testing recommendations
      - Use emojis throughout for better readability
    - Link the PR to the work item
+   - **CRITICAL - Verify PR Creation**:
+     - After creating the PR, **VERIFY** that it was created successfully
+     - Check that the PR exists in Azure DevOps
+     - Confirm the following requirements were met:
+       - ✅ PR is in **Draft** mode
+       - ✅ PR is assigned to the work item creator
+       - ✅ Work item creator is added as a **Required Reviewer**
+       - ✅ Tag "copilot" is present
+       - ✅ PR is linked to the work item
+     - If ANY of these requirements are not met, fix them immediately
+     - Report the PR URL and status to the user
 
 10. **Update Work Item Activity Field**:
    - Set the work item's "Activity" field based on what was requested in the work item
