@@ -10,6 +10,8 @@ resources:
 
 variables:
   - group: 'GitHub Copilot CLI'
+  # No puedes definir env variables aquí, pero puedes usarlas con $(variable)
+  # Las variables del Variable Group están disponibles como $(GH_TOKEN) y $(AZURE_DEVOPS_EXT_PAT)
 
 steps:
   - script: echo "🚀 Webhook triggered pipeline started!"
@@ -90,6 +92,31 @@ steps:
   - bash: |
       npm install -g @github/copilot     
     displayName: 🤖 Install GitHub Copilot CLI   
+
+  - bash: |
+      echo "🔍 Verificando variables de entorno..."
+      echo ""
+      
+      if [ -z "$GH_TOKEN" ]; then
+        echo "❌ ERROR: GH_TOKEN no está definido o está vacío"
+        exit 1
+      else
+        echo "✅ GH_TOKEN está definido (longitud: ${#GH_TOKEN} caracteres)"
+      fi
+      
+      if [ -z "$AZURE_DEVOPS_EXT_PAT" ]; then
+        echo "❌ ERROR: AZURE_DEVOPS_EXT_PAT no está definido o está vacío"
+        exit 1
+      else
+        echo "✅ AZURE_DEVOPS_EXT_PAT está definido (longitud: ${#AZURE_DEVOPS_EXT_PAT} caracteres)"
+      fi
+      
+      echo ""
+      echo "✅ Todas las variables necesarias están configuradas correctamente"
+    displayName: 🔍 Verify environment variables
+    env:
+      GH_TOKEN: $(GH_TOKEN)
+      AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   # - bash: |
   #     echo "🤖 Running GitHub Copilot CLI to test that it works"     
