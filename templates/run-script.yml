@@ -1,0 +1,27 @@
+parameters:
+  - name: script
+    type: string
+  - name: args
+    type: string
+    default: ""
+  - name: displayName
+    type: string
+  - name: workingDirectory
+    type: string
+    default: "$(System.DefaultWorkingDirectory)"
+  - name: requiresPAT
+    type: boolean
+    default: true
+  - name: additionalEnvVars
+    type: object
+    default: {}
+
+steps:
+  - bash: |
+      cd ${{ parameters.workingDirectory }}
+      $(PipelineScriptsDir)/${{ parameters.script }} ${{ parameters.args }}
+    displayName: ${{ parameters.displayName }}
+    ${{ if eq(parameters.requiresPAT, true) }}:
+      env:
+        AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+        ${{ insert }}: ${{ parameters.additionalEnvVars }}

@@ -1,0 +1,370 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+resources:
+  webhooks:
+    - webhook: myWebhookResource
+      connection: GHCopilotWH
+
+variables:
+  - group: "GitHub Copilot CLI"
+  - name: MODEL
+    value: claude-sonnet-4
+
+steps:
+  - script: echo "🚀 Webhook triggered pipeline started!"
+    displayName: 🚀 Start Pipeline
+
+  - task: NodeTool@0
+    inputs:
+      versionSource: "spec"
+      versionSpec: "22.x"
+      checkLatest: true
+    displayName: ⚙️ Setup Node.js 22.x
+
+  - bash: |
+      # Access webhook data as parameter
+      echo "🔔 Processing webhook payload..."
+      echo "═══════════════════════════════════════════════════════════"
+      echo "📋 WEBHOOK INFORMATION"
+      echo "═══════════════════════════════════════════════════════════"
+      echo ""
+      echo "🔖 Event Type: ${{ parameters.myWebhookResource.eventType }}"
+      echo "🆔 Subscription ID: ${{ parameters.myWebhookResource.subscriptionId }}"
+      echo "🔑 Notification ID: ${{ parameters.myWebhookResource.notificationId }}"
+      echo "🎯 Event ID: ${{ parameters.myWebhookResource.id }}"
+      echo "📡 Publisher ID: ${{ parameters.myWebhookResource.publisherId }}"
+      echo "📅 Created Date: ${{ parameters.myWebhookResource.createdDate }}"
+      echo "🔢 Resource Version: ${{ parameters.myWebhookResource.resourceVersion }}"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+      echo "💬 MESSAGE"
+      echo "═══════════════════════════════════════════════════════════"
+      echo ""
+      echo "${{ parameters.myWebhookResource.message.text }}"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+      echo "📝 WORK ITEM DETAILS (from webhook)"
+      echo "═══════════════════════════════════════════════════════════"
+      echo ""
+      echo "🆔 Work Item ID: ${{ parameters.myWebhookResource.resource.id }}"
+      echo "🔄 Revision: ${{ parameters.myWebhookResource.resource.rev }}"
+      echo "📌 Title: ${{ parameters.myWebhookResource.resource.fields['System.Title'] }}"
+      echo "🏷️  Type: ${{ parameters.myWebhookResource.resource.fields['System.WorkItemType'] }}"
+      echo "📊 State: ${{ parameters.myWebhookResource.resource.fields['System.State'] }}"
+      echo "❓ Reason: ${{ parameters.myWebhookResource.resource.fields['System.Reason'] }}"
+      echo "🎯 Priority: ${{ parameters.myWebhookResource.resource.fields['Microsoft.VSTS.Common.Priority'] }}"
+      echo ""
+      echo "📄 Description:"
+      echo "${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
+      echo ""
+      echo "👤 Created By: ${{ parameters.myWebhookResource.resource.fields['System.CreatedBy'] }}"
+      echo "📅 Created Date: ${{ parameters.myWebhookResource.resource.fields['System.CreatedDate'] }}"
+      echo ""
+      echo "👥 Assigned To: ${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'] }}"
+      echo ""
+      echo "🔄 Changed By: ${{ parameters.myWebhookResource.resource.fields['System.ChangedBy'] }}"
+      echo "📅 Changed Date: ${{ parameters.myWebhookResource.resource.fields['System.ChangedDate'] }}"
+      echo ""
+      echo "📂 Area Path: ${{ parameters.myWebhookResource.resource.fields['System.AreaPath'] }}"
+      echo "🔁 Iteration Path: ${{ parameters.myWebhookResource.resource.fields['System.IterationPath'] }}"
+      echo "📁 Team Project: ${{ parameters.myWebhookResource.resource.fields['System.TeamProject'] }}"
+      echo ""
+      echo "⚠️  Severity: ${{ parameters.myWebhookResource.resource.fields['Microsoft.VSTS.Common.Severity'] }}"
+      echo "📋 Kanban Column: ${{ parameters.myWebhookResource.resource.fields['WEF_EB329F44FE5F4A94ACB1DA153FDF38BA_Kanban.Column'] }}"
+      echo ""
+      echo "🏷️  Tags: ${{ parameters.myWebhookResource.resource.fields['System.Tags'] }}"
+      echo ""
+      echo "🔗 Work Item URL: ${{ parameters.myWebhookResource.resource.url }}"
+      echo ""
+      echo "═══════════════════════════════════════════════════════════"
+
+      # Set pipeline variables for later use
+      echo "##vso[task.setvariable variable=WorkItemId]${{ parameters.myWebhookResource.resource.id }}"
+      echo "##vso[task.setvariable variable=WorkItemTitle]${{ parameters.myWebhookResource.resource.fields['System.Title'] }}"
+      echo "##vso[task.setvariable variable=WorkItemType]${{ parameters.myWebhookResource.resource.fields['System.WorkItemType'] }}"
+      echo "##vso[task.setvariable variable=WorkItemState]${{ parameters.myWebhookResource.resource.fields['System.State'] }}"
+      echo "##vso[task.setvariable variable=WorkItemCreatedBy]${{ parameters.myWebhookResource.resource.fields['System.CreatedBy'] }}"
+      echo "##vso[task.setvariable variable=WorkItemAssignedTo]${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'] }}"
+      echo "##vso[task.setvariable variable=WorkItemDescription]${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
+      echo "##vso[task.setvariable variable=ProjectName]${{ parameters.myWebhookResource.resource.fields['System.TeamProject'] }}"
+
+      # Extract Repository Name from Tags (format: repo:REPO_NAME)
+      TAGS="${{ parameters.myWebhookResource.resource.fields['System.Tags'] }}"
+      REPO_TAG=$(echo "$TAGS" | grep -oP 'repo:\S+' || true)
+      if [ -n "$REPO_TAG" ]; then
+        TARGET_REPO=$(echo "$REPO_TAG" | sed 's/repo://' | sed 's/;$//')
+        echo "🎯 Target repository found in tags: $TARGET_REPO"
+        echo "##vso[task.setvariable variable=TargetRepoName]$TARGET_REPO"
+      else
+        echo "⚠️  No target repository tag found. Using current repository."
+        echo "##vso[task.setvariable variable=TargetRepoName]$(Build.Repository.Name)"
+      fi
+
+      # Extract email from CreatedBy field (format: "Display Name <email@domain.com>")
+      CREATED_BY="${{ parameters.myWebhookResource.resource.fields['System.CreatedBy'] }}"
+      CREATOR_EMAIL=$(echo "$CREATED_BY" | grep -oP '[\w\.-]+@[\w\.-]+' || echo "$CREATED_BY")
+      echo "##vso[task.setvariable variable=CreatorEmail]$CREATOR_EMAIL"
+      echo "📧 Creator Email extracted: $CREATOR_EMAIL"
+      
+      # Store the pipeline scripts directory for later use
+      echo "##vso[task.setvariable variable=PipelineScriptsDir]$(System.DefaultWorkingDirectory)/scripts"
+      echo "📁 Pipeline scripts directory: $(System.DefaultWorkingDirectory)/scripts"
+    displayName: 📋 Parse Webhook Data
+
+  - bash: |
+      if [ "$(TargetRepoName)" != "$(Build.Repository.Name)" ]; then
+        echo "Cloning target repository: $(TargetRepoName)"
+        
+        # Extract organization from collection URI
+        ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+        
+        # URL encode the project name and repository name
+        PROJECT_ENCODED=$(printf '%s' "$(ProjectName)" | jq -sRr @uri | tr -d '\n')
+        REPO_ENCODED=$(printf '%s' "$(TargetRepoName)" | jq -sRr @uri | tr -d '\n')
+        
+        # Clone with authentication
+        git clone "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/${ORG}/${PROJECT_ENCODED}/_git/${REPO_ENCODED}" target-repo
+        cd target-repo
+        git config user.email "copilot-cli@azure.com"
+        git config user.name "GitHub Copilot CLI"
+      else
+        echo "Using current repository."
+        mkdir -p target-repo
+        rsync -a --exclude target-repo ./ target-repo/
+        cd target-repo
+      fi
+      echo "##vso[task.setvariable variable=TargetRepoDir]$(System.DefaultWorkingDirectory)/target-repo"
+    displayName: 🛎️ Clone Target Repository
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      npm install -g @github/copilot
+    displayName: 📦 Install Copilot CLI
+
+  - bash: |
+      echo "📝 Reading work item details..."
+      $(PipelineScriptsDir)/get-workitem.sh $(WorkItemId) "$(ProjectName)"
+    displayName: 📖 Step 1 - Read Work Item Details
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "💬 Adding initial comment to work item..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      $(PipelineScriptsDir)/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "👀🤖 <b>GitHub Copilot</b> started working on this task"
+    displayName: 💬 Step 2 - Add Initial Comment in the work item
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🌿 Creating feature branch..."
+      cd "$(TargetRepoDir)"
+      git checkout -b copilot/$(WorkItemId)
+      echo "✅ Branch copilot/$(WorkItemId) created"
+      git branch --show-current
+    displayName: 🌿 Step 3 - Create Feature Branch
+
+  - bash: |
+      echo " Assigning work item to GitHub Copilot CLI..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      $(PipelineScriptsDir)/assign-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "GitHub Copilot CLI"
+    displayName: 👤 Step 4 - Assign Work Item to GitHub Copilot
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🔄 Updating work item state to 'Doing'..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      $(PipelineScriptsDir)/update-workitem-state.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Doing"
+    displayName: 🔄 Step 5 - Update State to Doing
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🤖 Running GitHub Copilot CLI to implement changes..."
+      echo "═══════════════════════════════════════════════════════════"
+      echo "📋 Work Item: $(WorkItemId)"
+      echo "📌 Title: $(WorkItemTitle)"
+      echo "📁 Project: $(ProjectName)"
+      echo "📦 Target Repository: $(TargetRepoName)"
+      echo "═══════════════════════════════════════════════════════════"
+      
+      # Copy instructions to target repo
+      cd "$(TargetRepoDir)"
+      mkdir -p .github
+      cp $(System.DefaultWorkingDirectory)/.github/copilot-instructions.md .github/
+      echo "📋 Copied copilot instructions to target repository"
+      
+      # Run Copilot CLI
+      copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL)
+      
+      # Remove instructions from target repo (won't be committed)
+      rm -f .github/copilot-instructions.md
+      echo "🧹 Removed instructions file from target repository"
+    displayName: 🤖 Step 6 - Implement Changes with Copilot
+    name: CopilotStep
+    env:
+      GH_TOKEN: $(GH_TOKEN)
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+      CONTEXT7_API_KEY: $(CONTEXT7_API_KEY)
+
+  - bash: |
+      echo "📝 Committing changes..."
+      cd "$(TargetRepoDir)"
+      # Extract creator info from work item
+      CREATOR_INFO=$($(PipelineScriptsDir)/get-workitem.sh $(WorkItemId) "$(ProjectName)")
+      CREATOR_NAME=$(echo "$CREATOR_INFO" | grep "Created By Name:" | sed 's/Created By Name:[[:space:]]*//')
+      CREATOR_EMAIL=$(echo "$CREATOR_INFO" | grep "Created By Email:" | sed 's/Created By Email:[[:space:]]*//')
+
+      # Add all files except copilot-summary.md and commit-message.md
+      git add .
+      git reset HEAD copilot-summary.md 2>/dev/null || true
+      git reset HEAD commit-message.md 2>/dev/null || true
+      git reset HEAD .final-commit-msg.txt 2>/dev/null || true
+      git reset HEAD .github/copilot-instructions.md 2>/dev/null || true
+
+      # Prepare final commit message with co-author
+      if [ -f "commit-message.md" ]; then
+        echo "✅ Using Copilot-generated commit message"
+        # Append co-author to the Copilot-generated message
+        cat commit-message.md > .final-commit-msg.txt
+        echo "" >> .final-commit-msg.txt
+        echo "" >> .final-commit-msg.txt
+        echo "Co-authored-by: ${CREATOR_NAME} <${CREATOR_EMAIL}>" >> .final-commit-msg.txt
+      else
+        echo "⚠️  commit-message.md not found, using default message"
+        # Create a complete message with default content and co-author
+        echo "feat: Implement work item $(WorkItemId)" > .final-commit-msg.txt
+        echo "" >> .final-commit-msg.txt
+        echo "$(WorkItemTitle)" >> .final-commit-msg.txt
+        echo "" >> .final-commit-msg.txt
+        echo "Changes implemented by GitHub Copilot CLI" >> .final-commit-msg.txt
+        echo "" >> .final-commit-msg.txt
+        echo "Co-authored-by: ${CREATOR_NAME} <${CREATOR_EMAIL}>" >> .final-commit-msg.txt
+      fi
+
+      # Create commit using the final message file
+      git commit -F .final-commit-msg.txt
+
+      # Clean up temporary file
+      rm -f .final-commit-msg.txt
+
+      echo "✅ Changes committed"
+    displayName: 💾 Step 7 - Commit Changes
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🚀 Pushing branch to remote..."
+      cd "$(TargetRepoDir)"
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+
+      # URL encode the project name and repository name (removing newlines)
+      PROJECT_ENCODED=$(printf '%s' "$(ProjectName)" | jq -sRr @uri | tr -d '\n')
+      REPO_ENCODED=$(printf '%s' "$(TargetRepoName)" | jq -sRr @uri | tr -d '\n')
+
+      # Configure git remote with PAT
+      git remote set-url origin "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/${ORG}/${PROJECT_ENCODED}/_git/${REPO_ENCODED}"
+
+      git push -u origin copilot/$(WorkItemId)
+
+      echo "✅ Branch pushed successfully"
+    displayName: 🚀 Step 8 - Push Branch
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🔗 Linking branch to work item using REST API..."
+      $(PipelineScriptsDir)/link-branch-to-workitem.sh \
+        $(WorkItemId) \
+        "$(ProjectName)" \
+        "$(TargetRepoName)" \
+        "copilot/$(WorkItemId)"
+    displayName: 🔗 Step 8.1 - Link Branch to Work Item
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🔧 Updating work item activity..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      $(PipelineScriptsDir)/update-workitem-activity.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Development"
+    displayName: 🔧 Step 9 - Update Activity
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "📬 Creating Pull Request..."
+      cd "$(TargetRepoDir)"
+      # Extract organization from collection URI
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+
+      # Read the summary generated by Copilot
+      if [ -f "copilot-summary.md" ]; then
+        PR_DESCRIPTION=$(cat copilot-summary.md)
+      else
+        PR_DESCRIPTION="Automated implementation by GitHub Copilot CLI for Work Item #$(WorkItemId)"
+      fi
+
+      # Get target branch (default to main)
+      TARGET_BRANCH="main"
+
+      # Capture the PR_ID from the script output (last line)
+      PR_OUTPUT=$($(PipelineScriptsDir)/create-pr-with-required-reviewer.sh \
+        "$ORG" \
+        "$(ProjectName)" \
+        "$(TargetRepoName)" \
+        "copilot/$(WorkItemId)" \
+        "$TARGET_BRANCH" \
+        "$(WorkItemTitle)" \
+        "$PR_DESCRIPTION" \
+        "$(CreatorEmail)")
+      
+      PR_ID=$(echo "$PR_OUTPUT" | tail -n 1)
+      echo "✅ Pull Request created successfully"
+      echo "✅ PR ID: $PR_ID"
+
+      # Store PR ID and URL for the next steps
+      echo "##vso[task.setvariable variable=PrId]$PR_ID"
+      echo "##vso[task.setvariable variable=PrUrl]https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(TargetRepoName)/pullrequest/${PR_ID}"
+    displayName: 📬 Step 10 - Create Pull Request
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "🔗 Linking Pull Request to work item using REST API..."
+      $(PipelineScriptsDir)/link-pr-to-workitem.sh \
+        $(WorkItemId) \
+        "$(ProjectName)" \
+        "$(TargetRepoName)" \
+        $(PrId)
+    displayName: 🔗 Step 10.1 - Link Pull Request to Work Item
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "💬 Adding completion comment to work item..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      
+      # Get the creator's display name for mention
+      CREATOR_DISPLAY_NAME=$(echo "$(WorkItemCreatedBy)" | sed 's/<.*//' | xargs)
+      
+      # Create a rich comment with the completion status and mention
+      COMMENT="@${CREATOR_DISPLAY_NAME} ✅🤖 <b>GitHub Copilot</b> has completed the implementation<br/><br/>✨ The changes have been implemented and are ready for review.<br/>📬 A Pull Request has been created with the requested changes.<br/><br/>🔗 <a href='$(PrUrl)'>View Pull Request</a>"
+      
+      $(PipelineScriptsDir)/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "$COMMENT"
+      
+      echo "✅ Comment added successfully"
+    displayName: 💬 Step 11 - Add Completion Comment
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: "logs"
+      artifact: "copilot-logs"
+    displayName: 📦 Publish Logs
+    condition: always()
