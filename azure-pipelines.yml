@@ -289,7 +289,7 @@ steps:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   - bash: |
-      echo "🔧 Updating work item activity...""
+      echo "🔧 Updating work item activity..."
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
       $(PipelineScriptsDir)/update-workitem-activity.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Development"
     displayName: 🔧 Step 9 - Update Activity
