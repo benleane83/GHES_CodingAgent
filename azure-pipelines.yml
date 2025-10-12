@@ -126,6 +126,19 @@ steps:
       GH_TOKEN: $(GH_TOKEN)
       AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
+  - bash: |
+      echo "🤖 Running GitHub Copilot CLI to implement changes"
+      copilot \
+      -p "Quiero implementar los cambios necesarios en el work item $(WorkItemId) de Azure DevOps project '$(ProjectName)'" \
+      --allow-all-tools \
+      --log-level debug \
+      --log-dir ./logs
+    displayName: 🤖 Implement changes in Work Item via Copilot CLI
+    env:
+      GH_TOKEN: $(GH_TOKEN)
+      AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+
 
   - task: PublishPipelineArtifact@1
     inputs:
