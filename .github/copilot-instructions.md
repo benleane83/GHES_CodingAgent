@@ -27,17 +27,21 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - Example: `copilot/372` for work item #372
    - Switch to this new branch before making any changes
 
-3. **Analyze and Plan**:
+3. **Update Work Item State**:
+   - Use the MCP Server to update the work item state to "Doing"
+   - This indicates that work has started on the task
+
+4. **Analyze and Plan**:
    - Carefully analyze the work item description
    - Plan your implementation approach
    - Share your analysis and approach with the user before proceeding
 
-4. **Implement the Changes**:
+5. **Implement the Changes**:
    - Work on the task as described in the work item description
    - Make all necessary code changes in the `copilot/<work-item-id>` branch
    - Ensure code quality and follow best practices
 
-5. **Create a Draft Pull Request**:
+6. **Create a Draft Pull Request**:
    - Once implementation is complete, create a Pull Request in **Draft** mode
    - Write a detailed summary of what you implemented, including:
      - 📝 Overview of changes
