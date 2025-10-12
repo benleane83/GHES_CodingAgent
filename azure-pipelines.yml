@@ -193,7 +193,7 @@ steps:
       echo "📦 Target Repository: $(TargetRepoName)"
       echo "═══════════════════════════════════════════════════════════"
       cd "$(TargetRepoDir)"
-      copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL) --add-dir $(System.DefaultWorkingDirectory)/.github
+      copilot -p "Follow the instructions in .github/copilot-instructions.md to implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL) --add-dir $(System.DefaultWorkingDirectory)/.github
     displayName: 🤖 Step 6 - Implement Changes with Copilot
     name: CopilotStep
     env:
