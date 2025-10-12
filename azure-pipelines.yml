@@ -200,7 +200,7 @@ steps:
       echo "📋 Copied copilot instructions to target repository"
       
       # Run Copilot CLI
-      copilot -p "Follow the instructions in .github/copilot-instructions.md to implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL)
+      copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL)
       
       # Remove instructions from target repo (won't be committed)
       rm -f .github/copilot-instructions.md
