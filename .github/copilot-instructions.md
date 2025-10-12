@@ -65,7 +65,16 @@ When implementing features or working with libraries, frameworks, or APIs:
 
 ## Workflow for Implementing Work Items
 
-When the user asks you to implement or work on a task from Azure DevOps:
+**CRITICAL**: This workflow MUST be followed in EXACTLY this order. Do NOT skip steps or change the sequence.
+
+**⚠️ CRITICAL RULES - READ BEFORE STARTING:**
+1. **NEVER commit directly to main/master branch** - Always create a `copilot/<work-item-id>` branch
+2. **NEVER mark work item as "Done"** - Work items stay in "Doing" state until PR is reviewed and merged
+3. **ALWAYS create a Pull Request** - Every implementation MUST go through a PR, even small changes
+4. **ALWAYS use the provided scripts** - Do NOT use `az boards` CLI commands or manual REST API calls
+5. **ALWAYS push the branch** - The PR must be created from the pushed branch in Azure DevOps
+
+When the user asks you to implement or work on a task from Azure DevOops:
 
 1. **Verify Azure DevOps Organization** (FIRST STEP):
    - Confirm you have the correct organization name from context
@@ -75,9 +84,10 @@ When the user asks you to implement or work on a task from Azure DevOps:
 2. **Read the Work Item Details**:
    - Get the full work item details
    - Pay special attention to the description field which contains the requirements
-   - Note who created the work item (you'll need this later)
+   - **MANDATORY**: Note who created the work item (`System.CreatedBy` field) - you'll need this for PR reviewer
+   - **MANDATORY**: Note the project name (`System.TeamProject` field) - you'll need this for all scripts
 
-3. **Add Initial Comment - DO THIS FIRST**:
+3. **Add Initial Comment - DO THIS FIRST BEFORE ANY OTHER ACTION**:
    - **CRITICAL**: This is the FIRST action before any implementation work
    - Add a comment to the work item discussion with these two emojis: 👀🤖
    - **MANDATORY**: Use the provided script to add the comment
@@ -97,10 +107,14 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - **DO NOT**: Try to call the Azure DevOps REST API directly for adding comments
    - **DO**: Use this script which handles all the complexity
 
-4. **Create a New Branch**:
-   - Create a new branch with the naming convention: `copilot/<work-item-id>`
-   - Example: `copilot/372` for work item #372
-   - Switch to this new branch before making any changes
+4. **Create a New Branch - MANDATORY BEFORE ANY CODE CHANGES**:
+   - **CRITICAL**: You MUST create a new branch BEFORE making ANY code changes
+   - **Branch naming convention**: `copilot/<work-item-id>`
+   - Example: `copilot/372` for work item 372
+   - **MANDATORY**: Switch to this new branch before making any changes
+   - **DO NOT**: Make commits directly to the main/master branch
+   - Use: `git checkout -b copilot/<work-item-id>`
+   - Verify: `git branch --show-current` to confirm you're on the new branch
 
 5. **Update Work Item State**:
    - Update the work item state to "Doing"
@@ -146,6 +160,8 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - Share your analysis and approach with the user before proceeding
 
 8. **Implement the Changes**:
+   - **VERIFY**: Confirm you are on the `copilot/<work-item-id>` branch
+   - Run: `git branch --show-current` to verify
    - Work on the task as described in the work item description
    - Make all necessary code changes in the `copilot/<work-item-id>` branch
    - Ensure code quality and follow best practices
@@ -154,8 +170,15 @@ When the user asks you to implement or work on a task from Azure DevOps:
      Co-authored-by: Name <email@example.com>
      ```
    - Extract the creator's name and email from the work item's `System.CreatedBy` field
+   - **DO NOT**: Complete the work item or mark it as "Done" - it stays in "Doing" until PR is merged
 
-9. **Create a Draft Pull Request**:
+9. **Push the Branch to Azure DevOps - MANDATORY**:
+   - **CRITICAL**: You MUST push the branch before creating the PR
+   - Use: `git push origin copilot/<work-item-id>`
+   - Verify the push was successful before proceeding
+   - If push fails due to permissions, report the error but do NOT mark work item as "Done"
+
+10. **Create a Draft Pull Request - MANDATORY**:
    - **IMPORTANT**: Create the Pull Request in **Draft** mode (not ready for review)
    - **IMPORTANT**: Assign the PR to the person who created the work item (from `System.CreatedBy` field)
    - **IMPORTANT**: Add the work item creator as a **Required Reviewer** - you cannot complete the PR yourself
@@ -209,7 +232,7 @@ When the user asks you to implement or work on a task from Azure DevOps:
      - If ANY of these requirements are not met, fix them immediately
      - Report the PR URL and status to the user
 
-10. **Update Work Item Activity Field**:
+11. **Update Work Item Activity Field**:
    - Set the work item's "Activity" field based on what was requested in the work item
    - **MANDATORY**: Use the provided script to update the Activity field
    - **Script to use**: `./scripts/update-workitem-activity.sh`
@@ -236,7 +259,7 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - **DO NOT**: Try to call the Azure DevOps REST API directly
    - **DO**: Use this script which handles the PATCH request and validates activity values
 
-11. **Report Issues (if any)**:
+12. **Report Issues (if any)**:
    - If any step in the workflow failed or encountered problems:
      - Clearly document which step(s) failed
      - Explain what went wrong and why
@@ -259,7 +282,14 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - **DO**: Use this script to add error comments so the user sees them in Azure DevOps
    - Report this at the end of the execution so the user is aware of any issues
 
-**Example PR Description Format**:
+**⚠️ FINAL REMINDER:**
+- **NEVER mark the work item as "Done"** - This is done automatically when the PR is merged
+- The work item should remain in "Doing" state with a PR in Draft mode awaiting review
+- The workflow is: To Do → Doing (with PR) → Done (after PR merge by reviewer)
+- **DO NOT**: Use `az boards` CLI commands - ALWAYS use the provided scripts
+- **DO NOT**: Make direct commits to main/master branch - ALWAYS create a branch and PR
+
+**Example PR Description Format:**
 ```
 ## 🎯 Summary
 Brief overview of what was implemented
