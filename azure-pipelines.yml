@@ -105,6 +105,10 @@ steps:
       CREATOR_EMAIL=$(echo "$CREATED_BY" | grep -oP '[\w\.-]+@[\w\.-]+' || echo "$CREATED_BY")
       echo "##vso[task.setvariable variable=CreatorEmail]$CREATOR_EMAIL"
       echo "📧 Creator Email extracted: $CREATOR_EMAIL"
+      
+      # Store the pipeline scripts directory for later use
+      echo "##vso[task.setvariable variable=PipelineScriptsDir]$(System.DefaultWorkingDirectory)/scripts"
+      echo "📁 Pipeline scripts directory: $(System.DefaultWorkingDirectory)/scripts"
     displayName: 📋 Parse Webhook Data
 
   - bash: |
@@ -140,7 +144,7 @@ steps:
 
   - bash: |
       echo "📝 Reading work item details..."
-      ./scripts/get-workitem.sh $(WorkItemId) "$(ProjectName)"
+      $(PipelineScriptsDir)/get-workitem.sh $(WorkItemId) "$(ProjectName)"
     displayName: 📖 Step 1 - Read Work Item Details
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
@@ -148,7 +152,7 @@ steps:
   - bash: |
       echo "💬 Adding initial comment to work item..."
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
-      ./scripts/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "👀🤖 <b>GitHub Copilot</b> started working on this task"
+      $(PipelineScriptsDir)/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "👀🤖 <b>GitHub Copilot</b> started working on this task"
     displayName: 💬 Step 2 - Add Initial Comment in the work item
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
@@ -164,7 +168,7 @@ steps:
   - bash: |
       echo "👤 Assigning work item to GitHub Copilot CLI..."
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
-      ./scripts/assign-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "GitHub Copilot CLI"
+      $(PipelineScriptsDir)/assign-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "GitHub Copilot CLI"
     displayName: 👤 Step 4 - Assign Work Item to GitHub Copilot
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
@@ -172,7 +176,7 @@ steps:
   - bash: |
       echo "🔄 Updating work item state to 'Doing'..."
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
-      ./scripts/update-workitem-state.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Doing"
+      $(PipelineScriptsDir)/update-workitem-state.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Doing"
     displayName: 🔄 Step 5 - Update State to Doing
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
@@ -198,7 +202,7 @@ steps:
       echo "📝 Committing changes..."
       cd "$(TargetRepoDir)"
       # Extract creator info from work item
-      CREATOR_INFO=$(../../scripts/get-workitem.sh $(WorkItemId) "$(ProjectName)")
+      CREATOR_INFO=$($(PipelineScriptsDir)/get-workitem.sh $(WorkItemId) "$(ProjectName)")
       CREATOR_NAME=$(echo "$CREATOR_INFO" | grep "Created By Name:" | sed 's/Created By Name:[[:space:]]*//')
       CREATOR_EMAIL=$(echo "$CREATOR_INFO" | grep "Created By Email:" | sed 's/Created By Email:[[:space:]]*//')
 
@@ -261,7 +265,7 @@ steps:
   - bash: |
       echo "🔧 Updating work item activity..."
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
-      ./scripts/update-workitem-activity.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Development"
+      $(PipelineScriptsDir)/update-workitem-activity.sh "$ORG" "$(ProjectName)" $(WorkItemId) "Development"
     displayName: 🔧 Step 9 - Update Activity
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
@@ -282,7 +286,7 @@ steps:
       # Get target branch (default to main)
       TARGET_BRANCH="main"
 
-      ./../../scripts/create-pr-with-required-reviewer.sh \
+      $(PipelineScriptsDir)/create-pr-with-required-reviewer.sh \
         "$ORG" \
         "$(ProjectName)" \
         "$(TargetRepoName)" \
@@ -308,9 +312,9 @@ steps:
       CREATOR_DISPLAY_NAME=$(echo "$(WorkItemCreatedBy)" | sed 's/<.*//' | xargs)
       
       # Create a rich comment with the completion status and mention
-      COMMENT="@${CREATOR_DISPLAY_NAME} ✅🤖 <b>GitHub Copilot</b> ha completado la implementación<br/><br/>✨ Los cambios han sido implementados y están listos para revisión.<br/>📬 Se ha creado un Pull Request con los cambios solicitados.<br/><br/>🔗 <a href='https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(Build.Repository.Name)/pullrequest'>Ver Pull Request</a>"
+      COMMENT="@${CREATOR_DISPLAY_NAME} ✅🤖 <b>GitHub Copilot</b> has completed the implementation<br/><br/>✨ The changes have been implemented and are ready for review.<br/>📬 A Pull Request has been created with the requested changes.<br/><br/>🔗 <a href='https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(TargetRepoName)/pullrequest'>View Pull Request</a>"
       
-      ./scripts/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "$COMMENT"
+      $(PipelineScriptsDir)/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "$COMMENT"
       
       echo "✅ Comment added successfully"
     displayName: 💬 Step 11 - Add Completion Comment
