@@ -25,7 +25,9 @@ You will receive the work item description in your prompt. Your responsibilities
 
 ### 2. Generate Implementation Summary
 
-**CRITICAL**: You MUST create a summary file at `copilot-summary.md`
+**CRITICAL**: You MUST create TWO files:
+
+#### A) `copilot-summary.md` - Pull Request Description
 
 This file will be used as the Pull Request description.
 
@@ -73,5 +75,40 @@ cat > copilot-summary.md << 'EOF'
 
 ### ✅ Criterios de Aceptación Cumplidos
 - [x] Criterion 1
+EOF
+```
+
+#### B) `commit-message.md` - Commit Message
+
+This file will be used as the git commit message.
+
+**Required format** (follow Conventional Commits):
+
+```
+<type>: <short description>
+
+<detailed description of changes>
+
+- Changed file1.ext: specific change
+- Changed file2.ext: specific change
+```
+
+**Types to use**:
+- `feat`: New feature
+- `fix`: Bug fix
+- `refactor`: Code refactoring
+- `docs`: Documentation changes
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+
+**Command to create the commit message file**:
+```bash
+cat > commit-message.md << 'EOF'
+feat: Add new feature
+
+Implemented the requested functionality following best practices.
+
+- Modified file1.ext: added new function
+- Updated file2.ext: refactored logic
 EOF
 ```
