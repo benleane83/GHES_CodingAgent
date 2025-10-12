@@ -12,6 +12,17 @@ You are being called from an Azure DevOps Pipeline that handles the workflow aut
 
 ## 📋 Your Task
 
+
+
+## 🚨 Important: Requested Version Compliance
+
+If the work item description requests a specific version of any tool, framework, runtime, or SDK (for example, ".NET 9", "Node.js 20", "Python 3.12", etc.), **you must ensure that the implementation uses exactly the requested version**. Do not use an earlier or later version (e.g., do not use .NET 8 if .NET 9 is requested). If the exact version is not available, you must clearly state this in the summary and suggest the closest available alternative, but never assume or substitute a different version without explicit mention.
+
+## 🌐 Language of Output
+
+The implementation summary (`copilot-summary.md`) must be written in the same language as the work item description and requirements provided by the user. The commit message (`commit-message.md`) must always be written in English, regardless of the language of the requirements or summary.
+
+
 You will receive the work item description in your prompt. Your responsibilities are:
 
 ### 1. Implement the Requirements
@@ -34,23 +45,23 @@ This file will be used as the Pull Request description.
 **Required format**:
 
 ```markdown
-## ✨ Cambios Implementados
+## ✨ Implemented Changes
 
-### 📝 Resumen
+### 📝 Summary
 [Brief description of what was implemented - 2-3 sentences]
 
-### 📁 Archivos Modificados
+### 📁 Modified Files
 - `path/to/file1.ext` - [What changed in this file]
 - `path/to/file2.ext` - [What changed in this file]
 
-### 🔧 Detalles de Implementación
+### 🔧 Implementation Details
 [Technical details: design decisions, patterns used, approach chosen]
 
-### 🧪 Cómo Probar
+### 🧪 How to Test
 1. [Step to test the implementation]
 2. [Step to verify functionality]
 
-### ✅ Criterios de Aceptación Cumplidos
+### ✅ Acceptance Criteria Met
 - [x] [Acceptance criterion 1]
 - [x] [Acceptance criterion 2]
 ```
@@ -58,22 +69,22 @@ This file will be used as the Pull Request description.
 **Command to create the summary file**:
 ```bash
 cat > copilot-summary.md << 'EOF'
-## ✨ Cambios Implementados
+## ✨ Implemented Changes
 
-### 📝 Resumen
+### 📝 Summary
 [Your summary here...]
 
-### 📁 Archivos Modificados
+### 📁 Modified Files
 - `file1.ext` - Description
 
-### 🔧 Detalles de Implementación
+### 🔧 Implementation Details
 [Your details here...]
 
-### 🧪 Cómo Probar
+### 🧪 How to Test
 1. Step 1
 2. Step 2
 
-### ✅ Criterios de Aceptación Cumplidos
+### ✅ Acceptance Criteria Met
 - [x] Criterion 1
 EOF
 ```

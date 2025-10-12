@@ -149,7 +149,7 @@ steps:
       echo "═══════════════════════════════════════════════════════════"     
 
 
-      copilot -p "Analiza la descripción del work item y realiza los cambios necesarios en el código del repositorio para completar la tarea: Título: $(WorkItemTitle). Descripción: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ./logs --model $(MODEL)
+      copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ./logs --model $(MODEL)
 
     displayName: 🤖 Step 6 - Implement Changes with Copilot
     name: CopilotStep
