@@ -132,22 +132,28 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - **IMPORTANT**: Create the Pull Request in **Draft** mode (not ready for review)
    - **IMPORTANT**: Assign the PR to the person who created the work item (from `System.CreatedBy` field)
    - **IMPORTANT**: Add the work item creator as a **Required Reviewer** - you cannot complete the PR yourself
-   - **MANDATORY**: Use the Azure DevOps REST API to add reviewers
-   - **REST API Details for adding reviewers**:
-     - Endpoint: `PUT https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/reviewers/{reviewerId}?api-version=6.1-preview.1`
-     - Headers:
-       - `Content-Type: application/json`
-       - `Authorization: Basic {Base64EncodedPAT}` (use the `AZURE_DEVOPS_PAT` environment variable)
-     - Request Body: Object with `id` and `isRequired` properties
-     - Example to add a required reviewer:
-       ```bash
-       curl -X PUT \
-         "https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/reviewers/{reviewerId}?api-version=6.1-preview.1" \
-         -H "Content-Type: application/json" \
-         -H "Authorization: Basic {Base64EncodedPAT}" \
-         -d '{"id": "{userId}", "isRequired": true}'
-       ```
-     - Extract the user ID from the work item's `System.CreatedBy` field
+   - **MANDATORY**: Use the provided script to add the required reviewer
+   - **Script to use**: `./scripts/add-required-reviewer.sh`
+   - **Script usage**:
+     ```bash
+     ./scripts/add-required-reviewer.sh <organization> <project> <repository-id> <pr-id> <reviewer-email>
+     ```
+   - **Parameters to extract**:
+     - `organization`: From `System.CollectionUri` environment variable
+     - `project`: From the work item's `System.TeamProject` field
+     - `repository-id`: From the repository information
+     - `pr-id`: The Pull Request ID number you just created
+     - `reviewer-email`: From the work item's `System.CreatedBy` field (extract the email/uniqueName)
+   - **Example**:
+     ```bash
+     ./scripts/add-required-reviewer.sh returngisorg "My Project" abc-123-def 42 user@example.com
+     ```
+   - **DO NOT**: Try to call the Azure DevOps REST API directly for adding reviewers
+   - **DO**: Use this script which handles all the complexity including:
+     - Finding the correct Identity ID from the email
+     - URL-encoding the project name
+     - Making the PUT request with correct format
+     - Verifying the reviewer was added as required
    - **IMPORTANT**: Add the tag "copilot" to the PR
    - Analyze the changes and add additional relevant tags based on the work done:
      - Consider tags like: `feature`, `bugfix`, `refactor`, `documentation`, `performance`, `security`, `testing`, etc.
