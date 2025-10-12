@@ -169,34 +169,16 @@ steps:
     displayName: 🌿 Step 3 - Create Feature Branch
 
   - bash: |
-      echo "� Linking branch to work item..."
-      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
-      
-      # Get repository ID
-      REPO_ID=$(curl -s -u ":${AZURE_DEVOPS_PAT}" \
-        "https://dev.azure.com/${ORG}/$(ProjectName)/_apis/git/repositories/$(TargetRepoName)?api-version=7.1" \
-        | jq -r '.id')
-      
-      # Get project ID
-      PROJECT_ID=$(curl -s -u ":${AZURE_DEVOPS_PAT}" \
-        "https://dev.azure.com/${ORG}/_apis/projects/$(ProjectName)?api-version=7.1" \
-        | jq -r '.id')
-      
-      # Create artifact link URL for the branch
-      BRANCH_NAME="copilot/$(WorkItemId)"
-      ARTIFACT_URL="vstfs:///Git/Ref/${PROJECT_ID}%2F${REPO_ID}%2FGB${BRANCH_NAME//\//%2F}"
-      
-      # Link branch to work item
-      curl -s -u ":${AZURE_DEVOPS_PAT}" \
-        -X PATCH \
-        -H "Content-Type: application/json-patch+json" \
-        -d "[{\"op\":\"add\",\"path\": \"/relations/-\",\"value\":{\"rel\":\"ArtifactLink\",\"url\":\"${ARTIFACT_URL}\",\"attributes\":{\"name\":\"Branch\"}}}]" \
-        "https://dev.azure.com/${ORG}/$(ProjectName)/_apis/wit/workitems/$(WorkItemId)?api-version=7.1"
-      
-      echo "✅ Branch linked to work item"
+      echo "🔗 Linking branch to work item using Azure Boards CLI..."
+      $(PipelineScriptsDir)/link-branch-to-workitem.sh \
+        $(WorkItemId) \
+        "$(ProjectName)" \
+        "$(TargetRepoName)" \
+        "copilot/$(WorkItemId)"
     displayName: 🔗 Step 3.1 - Link Branch to Work Item
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
 
   - bash: |
       echo "�👤 Assigning work item to GitHub Copilot CLI..."
@@ -354,30 +336,12 @@ steps:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   - bash: |
-      echo "🔗 Linking Pull Request to work item..."
-      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
-      
-      # Get repository ID
-      REPO_ID=$(curl -s -u ":${AZURE_DEVOPS_PAT}" \
-        "https://dev.azure.com/${ORG}/$(ProjectName)/_apis/git/repositories/$(TargetRepoName)?api-version=7.1" \
-        | jq -r '.id')
-      
-      # Get project ID
-      PROJECT_ID=$(curl -s -u ":${AZURE_DEVOPS_PAT}" \
-        "https://dev.azure.com/${ORG}/_apis/projects/$(ProjectName)?api-version=7.1" \
-        | jq -r '.id')
-      
-      # Create artifact link URL for the PR
-      ARTIFACT_URL="vstfs:///Git/PullRequestId/${PROJECT_ID}%2F${REPO_ID}%2F$(PrId)"
-      
-      # Link PR to work item
-      curl -s -u ":${AZURE_DEVOPS_PAT}" \
-        -X PATCH \
-        -H "Content-Type: application/json-patch+json" \
-        -d "[{\"op\":\"add\",\"path\":\"/relations/-\",\"value\":{\"rel\":\"ArtifactLink\",\"url\":\"${ARTIFACT_URL}\",\"attributes\":{\"name\":\"Pull Request\"}}}]" \
-        "https://dev.azure.com/${ORG}/$(ProjectName)/_apis/wit/workitems/$(WorkItemId)?api-version=7.1"
-      
-      echo "✅ Pull Request linked to work item"
+      echo "🔗 Linking Pull Request to work item using Azure Boards CLI..."
+      $(PipelineScriptsDir)/link-pr-to-workitem.sh \
+        $(WorkItemId) \
+        "$(ProjectName)" \
+        "$(TargetRepoName)" \
+        $(PrId)
     displayName: 🔗 Step 10.1 - Link Pull Request to Work Item
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)

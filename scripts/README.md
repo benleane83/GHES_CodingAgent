@@ -2,6 +2,76 @@
 
 This directory contains scripts for interacting with Azure DevOps work items and pull requests, designed to be used by the GitHub Copilot agent.
 
+## 📋 Scripts Overview
+
+### Work Item Management
+- `get-workitem.sh` - Retrieve work item details
+- `add-comment-to-workitem.sh` - Add comments to work items
+- `assign-workitem.sh` - Assign work items to users
+- `update-workitem-state.sh` - Update work item state
+- `update-workitem-activity.sh` - Update work item activity
+
+### Pull Request Management
+- `create-pr-with-required-reviewer.sh` - Create PRs with required reviewers
+- `add-required-reviewer.sh` - Add required reviewers to existing PRs
+- `pipeline-create-pr.sh` - Pipeline-specific PR creation
+
+### Linking (Azure Boards CLI)
+- `link-branch-to-workitem.sh` - Link Git branches to work items using Azure Boards CLI
+- `link-pr-to-workitem.sh` - Link Pull Requests to work items using Azure Boards CLI
+
+### Testing
+- `test-full-workflow.sh` - Test the complete workflow
+- `test-scripts-manual.sh` - Interactive manual testing
+- `validate-all-scripts.sh` - Automated validation
+
+## 🔗 Linking Work Items with Azure Boards CLI
+
+The linking scripts use **Azure Boards CLI** (`az boards`) instead of direct REST API calls for more reliable and maintainable work item linking.
+
+### Why Azure Boards CLI?
+
+✅ **More reliable** - Official Azure CLI tool with better error handling  
+✅ **Simpler code** - No need to construct complex artifact URIs manually  
+✅ **Better maintained** - Microsoft maintains the CLI, updates are automatic  
+✅ **Type-safe** - CLI validates parameters before making API calls
+
+### Link a Branch to a Work Item
+
+```bash
+./scripts/link-branch-to-workitem.sh <work-item-id> <project-name> <repo-name> <branch-name>
+```
+
+**Example:**
+```bash
+export AZURE_DEVOPS_PAT="your-pat-token"
+./scripts/link-branch-to-workitem.sh 123 "My Project" "MyRepo" "copilot/123"
+```
+
+### Link a Pull Request to a Work Item
+
+```bash
+./scripts/link-pr-to-workitem.sh <work-item-id> <project-name> <repo-name> <pr-id>
+```
+
+**Example:**
+```bash
+export AZURE_DEVOPS_PAT="your-pat-token"
+./scripts/link-pr-to-workitem.sh 123 "My Project" "MyRepo" 456
+```
+
+### How It Works
+
+Both scripts:
+1. Get the repository ID using `az repos show`
+2. Get the project ID using `az devops project show`
+3. Construct the appropriate artifact URI:
+   - Branch: `vstfs:///Git/Ref/{ProjectId}/{RepositoryId}/GB{BranchName}`
+   - PR: `vstfs:///Git/PullRequestId/{ProjectId}/{RepositoryId}/{PullRequestId}`
+4. Link using `az boards work-item relation add`
+
+The Azure CLI handles authentication, retries, and error handling automatically.
+
 ## 🧪 Testing the Scripts
 
 Before running the agent workflow, you can validate that all scripts work correctly. We provide two testing approaches:
