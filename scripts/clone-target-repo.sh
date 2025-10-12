@@ -11,6 +11,9 @@ CURRENT_REPO="$3"
 # Extract organization from collection URI
 ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
 
+# Get working directory from environment or use current directory
+WORK_DIR="${SYSTEM_DEFAULTWORKINGDIRECTORY:-$(pwd)}"
+
 if [ "$TARGET_REPO" != "$CURRENT_REPO" ]; then
   echo "🛎️ Cloning target repository: $TARGET_REPO"
   
@@ -32,5 +35,5 @@ else
   git config user.name "GitHub Copilot CLI"
 fi
 
-echo "##vso[task.setvariable variable=TargetRepoDir]$(System.DefaultWorkingDirectory)/target-repo"
-echo "✅ Repository ready at: $(System.DefaultWorkingDirectory)/target-repo"
+echo "##vso[task.setvariable variable=TargetRepoDir]${WORK_DIR}/target-repo"
+echo "✅ Repository ready at: ${WORK_DIR}/target-repo"

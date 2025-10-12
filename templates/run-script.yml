@@ -24,4 +24,5 @@ steps:
     ${{ if eq(parameters.requiresPAT, true) }}:
       env:
         AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+        SYSTEM_DEFAULTWORKINGDIRECTORY: $(System.DefaultWorkingDirectory)
         ${{ insert }}: ${{ parameters.additionalEnvVars }}
