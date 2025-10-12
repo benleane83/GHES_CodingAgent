@@ -13,6 +13,92 @@ All scripts require:
 
 ## Scripts
 
+### 0. get-workitem.sh
+
+Retrieves and displays information about an Azure DevOps work item.
+
+**Usage:**
+```bash
+./scripts/get-workitem.sh <work-item-id> [project]
+```
+
+**Parameters:**
+- `work-item-id`: Work Item ID number (required)
+- `project`: Project name (optional, uses System_TeamProject if not provided)
+
+**Environment Variables:**
+- `AZURE_DEVOPS_PAT`: Personal Access Token (required)
+- `System_CollectionUri`: Azure DevOps organization URL (required) - e.g., `https://dev.azure.com/myorg/`
+- `System_TeamProject`: Project name (used if project argument not provided)
+
+**Examples:**
+```bash
+# Using environment variables (typical in Azure Pipelines)
+./scripts/get-workitem.sh 412
+
+# Specifying project explicitly (handles spaces automatically)
+./scripts/get-workitem.sh 412 "GitHub Copilot CLI"
+
+# With project name containing spaces
+./scripts/get-workitem.sh 372 "My Project Name"
+```
+
+**What it displays:**
+- Work Item ID, Type, Title, State
+- Activity field value
+- Assigned To, Created By (with email)
+- Created Date
+- Description (first 20 lines)
+- Extracted information useful for other scripts (creator email, project name, etc.)
+
+**Output:**
+```
+🔍 Retrieving Work Item from Azure DevOps
+==========================================
+Organization: returngisorg
+Project: GitHub Copilot CLI
+Work Item ID: 412
+
+✅ Work item retrieved successfully!
+
+================================================
+📋 Work Item Details
+================================================
+ID:              412
+Type:            Task
+Title:           Add devcontainer configuration
+State:           To Do
+Activity:        Development
+Assigned To:     Unassigned
+Created By:      John Doe (john.doe@example.com)
+Created Date:    2025-10-12T10:30:00Z
+
+Description:
+---
+Add devcontainer configuration for the project...
+
+================================================
+
+📝 Extracted Information for Scripts:
+---
+Project:              GitHub Copilot CLI
+Created By Name:      John Doe
+Created By Email:     john.doe@example.com
+Work Item Type:       Task
+Current State:        To Do
+Current Activity:     Development
+```
+
+**Use Cases:**
+- Quickly view work item details before implementing
+- Extract creator email for Co-authored-by commits
+- Verify work item state and activity
+- Get project name for other script operations
+
+**Note:** This script automatically handles project names with spaces by URL-encoding them for the API call.
+
+---
+
 ### 1. add-comment-to-workitem.sh
 
 Adds a comment to an Azure DevOps work item.

@@ -1,37 +1,59 @@
 #!/bin/bash
 
 # Script para recuperar información de un Work Item de Azure DevOps
-# Uso: ./get-workitem.sh <organization> <project> <work-item-id>
+# Uso: ./get-workitem.sh <work-item-id> [project]
 
 set -e
 
 # Función para mostrar uso
 show_usage() {
-    echo "Usage: $0 <organization> <project> <work-item-id>"
+    echo "Usage: $0 <work-item-id> [project]"
     echo ""
     echo "Arguments:"
-    echo "  organization      : Azure DevOps organization name"
-    echo "  project          : Project name (will be URL-encoded automatically)"
-    echo "  work-item-id     : Work Item ID number"
+    echo "  work-item-id     : Work Item ID number (required)"
+    echo "  project          : Project name (optional, uses System.TeamProject env var if not provided)"
     echo ""
-    echo "Environment Variables Required:"
-    echo "  AZURE_DEVOPS_PAT : Personal Access Token for authentication"
+    echo "Environment Variables:"
+    echo "  AZURE_DEVOPS_PAT     : Personal Access Token for authentication (required)"
+    echo "  System_CollectionUri : Azure DevOps organization URL (required)"
+    echo "  System_TeamProject   : Project name (used if project argument not provided)"
     echo ""
-    echo "Example:"
-    echo "  $0 myorg 'My Project' 412"
+    echo "Examples:"
+    echo "  $0 412"
+    echo "  $0 412 'GitHub Copilot CLI'"
+    echo "  $0 412 'My Project Name'"
     exit 1
 }
 
 # Validar argumentos
-if [ $# -ne 3 ]; then
-    echo "❌ Error: Incorrect number of arguments (expected 3, got $#)"
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    echo "❌ Error: Incorrect number of arguments (expected 1-2, got $#)"
     echo ""
     show_usage
 fi
 
-ORGANIZATION="$1"
-PROJECT="$2"
-WORK_ITEM_ID="$3"
+WORK_ITEM_ID="$1"
+
+# Obtener el proyecto (argumento o variable de entorno)
+if [ $# -eq 2 ]; then
+    PROJECT="$2"
+elif [ -n "$System_TeamProject" ]; then
+    PROJECT="$System_TeamProject"
+else
+    echo "❌ Error: Project name not provided and System_TeamProject environment variable is not set"
+    echo ""
+    show_usage
+fi
+
+# Extraer organización de System_CollectionUri
+if [ -z "$System_CollectionUri" ]; then
+    echo "❌ Error: System_CollectionUri environment variable is not set"
+    echo "   Example: export System_CollectionUri='https://dev.azure.com/myorg/'"
+    exit 1
+fi
+
+# Extraer el nombre de la organización de la URL
+ORGANIZATION=$(echo "$System_CollectionUri" | sed -E 's|https://dev\.azure\.com/([^/]+)/?|\1|')
 
 # Validar PAT
 if [ -z "$AZURE_DEVOPS_PAT" ]; then

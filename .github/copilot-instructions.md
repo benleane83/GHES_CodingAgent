@@ -85,9 +85,32 @@ When the user asks you to implement or work on a task from Azure DevOops:
 
 2. **Read the Work Item Details**:
    - Get the full work item details
-   - Pay special attention to the description field which contains the requirements
-   - **MANDATORY**: Note who created the work item (`System.CreatedBy` field) - you'll need this for PR reviewer
-   - **MANDATORY**: Note the project name (`System.TeamProject` field) - you'll need this for all scripts
+   - **MANDATORY**: Use the provided script to retrieve work item information
+   - **Script to use**: `./scripts/get-workitem.sh`
+   - **Script usage**:
+     ```bash
+     # Using environment variables (typical in Azure Pipelines)
+     ./scripts/get-workitem.sh <work-item-id>
+     
+     # Or specifying project explicitly (handles spaces automatically)
+     ./scripts/get-workitem.sh <work-item-id> "Project Name"
+     ```
+   - **Example**:
+     ```bash
+     ./scripts/get-workitem.sh 412
+     # or
+     ./scripts/get-workitem.sh 412 "GitHub Copilot CLI"
+     ```
+   - **What to extract from the output**:
+     - Pay special attention to the **Description** field which contains the requirements
+     - **MANDATORY**: Note who created the work item (**Created By Email**) - you'll need this for:
+       - PR reviewer (required reviewer)
+       - Co-authored-by in commits
+     - **MANDATORY**: Note the project name (**Project**) - you'll need this for all scripts
+     - Note the current **State** and **Activity** values
+   - **DO NOT**: Try to call the Azure DevOps REST API directly
+   - **DO**: Use this script which handles URL encoding of project names with spaces
+   - **IF SCRIPT FAILS**: Report the error and STOP - do NOT use `az boards` as fallback
 
 3. **Add Initial Comment - DO THIS FIRST BEFORE ANY OTHER ACTION**:
    - **CRITICAL**: This is the FIRST action before any implementation work
