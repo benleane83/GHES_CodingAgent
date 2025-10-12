@@ -104,11 +104,11 @@ steps:
         echo "✅ GH_TOKEN está definido (longitud: ${#GH_TOKEN} caracteres)"
       fi
       
-      if [ -z "$AZURE_DEVOPS_EXT_PAT" ]; then
-        echo "❌ ERROR: AZURE_DEVOPS_EXT_PAT no está definido o está vacío"
+      if [ -z "$AZURE_DEVOPS_PAT" ]; then
+        echo "❌ ERROR: AZURE_DEVOPS_PAT no está definido o está vacío"
         exit 1
       else
-        echo "✅ AZURE_DEVOPS_EXT_PAT está definido (longitud: ${#AZURE_DEVOPS_EXT_PAT} caracteres)"
+        echo "✅ AZURE_DEVOPS_PAT está definido (longitud: ${#AZURE_DEVOPS_PAT} caracteres)"
       fi
       
       echo ""
@@ -116,7 +116,7 @@ steps:
     displayName: 🔍 Verify environment variables
     env:
       GH_TOKEN: $(GH_TOKEN)
-      AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   # - bash: |
   #     echo "🤖 Running GitHub Copilot CLI to test that it works"     
@@ -151,7 +151,7 @@ steps:
     displayName: 🤖 Add comment to Work Item via Copilot CLI
     env:
       GH_TOKEN: $(GH_TOKEN)
-      AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   - bash: |
       echo "🤖 Running GitHub Copilot CLI to implement changes"
@@ -163,7 +163,7 @@ steps:
     displayName: 🤖 Implement changes in Work Item via Copilot CLI
     env:
       GH_TOKEN: $(GH_TOKEN)
-      AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
 
 
