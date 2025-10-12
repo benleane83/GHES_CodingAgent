@@ -15,13 +15,14 @@ variables:
 
 steps:
   - script: echo "🚀 Webhook triggered pipeline started!"
-    displayName: 🚀 Webhook triggered
+    displayName: 🚀 Start Pipeline
 
   - task: NodeTool@0
     inputs:
       versionSource: 'spec'
       versionSpec: '22.x'
       checkLatest: true
+    displayName: ⚙️ Setup Node.js 22.x
 
   - bash: |
       # Access webhook data as parameter
@@ -87,11 +88,11 @@ steps:
       echo "##vso[task.setvariable variable=WorkItemAssignedTo]${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'] }}"
       echo "##vso[task.setvariable variable=WorkItemDescription]${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
       echo "##vso[task.setvariable variable=ProjectName]${{ parameters.myWebhookResource.resource.fields['System.TeamProject'] }}"
-    displayName: Display webhook information 📊
+    displayName: 📋 Parse Webhook Data
 
   - bash: |
       npm install -g @github/copilot     
-    displayName: 🤖 Install GitHub Copilot CLI   
+    displayName: 📦 Install Copilot CLI
 
   - bash: |
       echo "🔍 Verificando variables de entorno..."
@@ -113,7 +114,7 @@ steps:
       
       echo ""
       echo "✅ Todas las variables necesarias están configuradas correctamente"
-    displayName: 🔍 Verify environment variables
+    displayName: ✅ Verify Credentials
     env:
       GH_TOKEN: $(GH_TOKEN)
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
@@ -140,19 +141,6 @@ steps:
   #     GH_TOKEN: $(GH_TOKEN)
   #     AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
-
-  - bash: |
-      echo "🤖 Running GitHub Copilot CLI to add comment to work item"
-      copilot \
-      -p "Quiero añadir como comentario a la discusión del work item $(WorkItemId) de Azure DevOps project '$(ProjectName)' estos dos emojis 👀🤖" \
-      --allow-all-tools \
-      --log-level debug \
-      --log-dir ./logs
-    displayName: 🤖 Add comment to Work Item via Copilot CLI
-    env:
-      GH_TOKEN: $(GH_TOKEN)
-      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
-
   - bash: |
       echo "🤖 Running GitHub Copilot CLI to implement changes"
       copilot \
@@ -160,15 +148,13 @@ steps:
       --allow-all-tools \
       --log-level debug \
       --log-dir ./logs
-    displayName: 🤖 Implement changes in Work Item via Copilot CLI
+    displayName: 🚀 Implement Changes
     env:
       GH_TOKEN: $(GH_TOKEN)
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
-
-
 
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: 'logs'
       artifact: 'copilot-logs'
-    displayName: 📁 Publish logs as pipeline artifact
+    displayName: � Publish Logs
