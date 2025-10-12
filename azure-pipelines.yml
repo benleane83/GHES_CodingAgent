@@ -97,6 +97,7 @@ steps:
       echo "🤖 Running GitHub Copilot CLI to implement changes"
       copilot \
       -p "Quiero implementar los cambios necesarios en el work item $(WorkItemId) de Azure DevOps project '$(ProjectName)'" \
+      --model gpt-5 \
       --allow-all-tools \
       --log-level debug \
       --log-dir ./logs
