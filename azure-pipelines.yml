@@ -192,8 +192,19 @@ steps:
       echo "📁 Project: $(ProjectName)"
       echo "📦 Target Repository: $(TargetRepoName)"
       echo "═══════════════════════════════════════════════════════════"
+      
+      # Copy instructions to target repo
       cd "$(TargetRepoDir)"
-      copilot -p "Follow the instructions in .github/copilot-instructions.md to implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL) --add-dir $(System.DefaultWorkingDirectory)
+      mkdir -p .github
+      cp $(System.DefaultWorkingDirectory)/.github/copilot-instructions.md .github/
+      echo "📋 Copied copilot instructions to target repository"
+      
+      # Run Copilot CLI
+      copilot -p "Follow the instructions in .github/copilot-instructions.md to implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ../logs --model $(MODEL)
+      
+      # Remove instructions from target repo (won't be committed)
+      rm -f .github/copilot-instructions.md
+      echo "🧹 Removed instructions file from target repository"
     displayName: 🤖 Step 6 - Implement Changes with Copilot
     name: CopilotStep
     env:
@@ -214,6 +225,7 @@ steps:
       git reset HEAD copilot-summary.md 2>/dev/null || true
       git reset HEAD commit-message.md 2>/dev/null || true
       git reset HEAD .final-commit-msg.txt 2>/dev/null || true
+      git reset HEAD .github/copilot-instructions.md 2>/dev/null || true
 
       # Prepare final commit message with co-author
       if [ -f "commit-message.md" ]; then
