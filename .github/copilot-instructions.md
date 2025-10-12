@@ -107,6 +107,7 @@ When the user asks you to implement or work on a task from Azure DevOps:
 9. **Create a Draft Pull Request**:
    - **IMPORTANT**: Create the Pull Request in **Draft** mode (not ready for review)
    - **IMPORTANT**: Assign the PR to the person who created the work item (from `System.CreatedBy` field)
+   - **IMPORTANT**: Add the work item creator as a **Required Reviewer** - you cannot complete the PR yourself
    - **IMPORTANT**: Add the tag "copilot" to the PR
    - Analyze the changes and add additional relevant tags based on the work done:
      - Consider tags like: `feature`, `bugfix`, `refactor`, `documentation`, `performance`, `security`, `testing`, etc.
