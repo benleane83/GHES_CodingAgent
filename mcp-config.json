@@ -10,8 +10,8 @@
                 "-y",
                 "@azure-devops/mcp",
                 "returngisorg",
-                "--authentication",
-                "env"
+                "-a",
+                "azcli"
             ]
         }
     }

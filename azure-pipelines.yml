@@ -119,6 +119,23 @@ steps:
       GH_TOKEN: $(GH_TOKEN)
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
+  - bash: |
+      echo "🔐 Authenticating with Azure DevOps..."
+      
+      # Set the PAT as environment variable for Azure DevOps CLI
+      export AZURE_DEVOPS_EXT_PAT=$AZURE_DEVOPS_PAT
+      
+      # Configure Azure DevOps CLI defaults
+      az devops configure --defaults organization=https://dev.azure.com/returngisorg project="$(ProjectName)"
+      
+      # Verify authentication
+      echo "✅ Azure DevOps CLI configured successfully"
+      echo "   Organization: https://dev.azure.com/returngisorg"
+      echo "   Project: $(ProjectName)"
+    displayName: 🔐 Azure DevOps Login
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
   # - bash: |
   #     echo "🤖 Running GitHub Copilot CLI to test that it works"     
   #     copilot -p "Puedes decirme de qué trata este proyecto" --allow-all-tools
@@ -157,4 +174,4 @@ steps:
     inputs:
       targetPath: 'logs'
       artifact: 'copilot-logs'
-    displayName: � Publish Logs
+    displayName: 📦 Publish Logs
