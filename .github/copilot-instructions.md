@@ -165,9 +165,14 @@ When the user asks you to implement or work on a task from Azure DevOps:
      - Confirm the following requirements were met:
        - ✅ PR is in **Draft** mode
        - ✅ PR is assigned to the work item creator
-       - ✅ Work item creator is added as a **Required Reviewer**
+       - ✅ Work item creator is added as a **Required Reviewer** (NOT just a reviewer, must be REQUIRED)
        - ✅ Tag "copilot" is present
        - ✅ PR is linked to the work item
+     - **MANDATORY verification of Required Reviewer**:
+       - Query the PR to get the list of reviewers
+       - Verify that the work item creator appears in the reviewers list
+       - Verify that the `isRequired` property is set to `true` for that reviewer
+       - If the reviewer is not required, use the REST API to update it immediately
      - If ANY of these requirements are not met, fix them immediately
      - Report the PR URL and status to the user
 
