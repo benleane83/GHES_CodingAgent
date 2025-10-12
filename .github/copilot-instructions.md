@@ -35,6 +35,9 @@ When the user asks you to implement or work on a task from Azure DevOps:
 5. **Add Initial Comment**:
    - Add a comment to the work item discussion with these two emojis: 👀🤖
    - This signals that Copilot has started working on the task
+   - **Important**: Use HTML format for comments, not Markdown
+   - Azure DevOps work item comments use HTML editor
+   - Example: Use `<b>bold</b>` instead of `**bold**`, `<br>` instead of line breaks, etc.
 
 6. **Analyze and Plan**:
    - Carefully analyze the work item description
@@ -68,6 +71,10 @@ When the user asks you to implement or work on a task from Azure DevOps:
      - Explain what went wrong and why
      - Provide error messages or logs if available
      - Suggest possible solutions or next steps
+   - **Specific scenarios to report**:
+     - If unable to push the branch: Explain the error and likely permission issues
+     - If unable to create the PR: Detail the error and suggest permission fixes
+     - Add this information to the work item as a comment so the user can see it in Azure DevOps
    - Report this at the end of the execution so the user is aware of any issues
 
 **Example PR Description Format**:
