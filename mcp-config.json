@@ -12,7 +12,10 @@
                 "returngisorg",
                 "--authentication",
                 "env"
-            ]
+            ],
+            "env": {
+                "AZURE_DEVOPS_EXT_PAT": "AkLXzftZFkb59IJG0OwNjCA5zwyI23IykiQsEK0kqAs9HRM7CLP7JQQJ99BJACAAAAApTnvlAAASAZDO3wr8"
+            }
         }
     }
 }
