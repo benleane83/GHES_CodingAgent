@@ -252,7 +252,27 @@ steps:
         "$(CreatorEmail)"
 
       echo "✅ Pull Request created successfully"
+      
+      # Store PR URL for the next step
+      echo "##vso[task.setvariable variable=PrUrl]https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(Build.Repository.Name)/pullrequest"
     displayName: 📬 Step 10 - Create Pull Request
+    env:
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+
+  - bash: |
+      echo "💬 Adding completion comment to work item..."
+      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+      
+      # Get the creator's display name for mention
+      CREATOR_DISPLAY_NAME=$(echo "$(WorkItemCreatedBy)" | sed 's/<.*//' | xargs)
+      
+      # Create a rich comment with the completion status and mention
+      COMMENT="@&lt;${CREATOR_DISPLAY_NAME}&gt; ✅🤖 <b>GitHub Copilot</b> ha completado la implementación<br/><br/>✨ Los cambios han sido implementados y están listos para revisión.<br/>📬 Se ha creado un Pull Request con los cambios solicitados.<br/><br/>🔗 <a href='https://dev.azure.com/${ORG}/$(ProjectName)/_git/$(Build.Repository.Name)/pullrequest'>Ver Pull Request</a>"
+      
+      ./scripts/add-comment-to-workitem.sh "$ORG" "$(ProjectName)" $(WorkItemId) "$COMMENT"
+      
+      echo "✅ Comment added successfully"
+    displayName: 💬 Step 11 - Add Completion Comment
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
