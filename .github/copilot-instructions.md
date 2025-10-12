@@ -55,7 +55,7 @@ This file will be used as the Pull Request description.
 
 **Command to create the summary file**:
 ```bash
-cat > /tmp/copilot-summary.md << 'EOF'
+cat > copilot-summary.md << 'EOF'
 ## ✨ Cambios Implementados
 
 ### 📝 Resumen

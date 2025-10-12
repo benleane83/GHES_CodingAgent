@@ -181,11 +181,12 @@ steps:
       echo "🚀 Pushing branch to remote..."
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
 
-      # URL encode the project name
+      # URL encode the project name and repository name
       PROJECT_ENCODED=$(echo "$(ProjectName)" | jq -sRr @uri)
+      REPO_ENCODED=$(echo "$(Build.Repository.Name)" | jq -sRr @uri)
 
       # Configure git remote with PAT
-      git remote set-url origin "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/${ORG}/${PROJECT_ENCODED}/_git/$(Build.Repository.Name)"
+      git remote set-url origin "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/${ORG}/${PROJECT_ENCODED}/_git/${REPO_ENCODED}"
 
       git push -u origin copilot/$(WorkItemId)
 
@@ -204,17 +205,21 @@ steps:
 
   - bash: |
       echo "📬 Creating Pull Request..."
-      ./scripts/create-pullrequest.sh $(WorkItemId) \
-        $(WorkItemTitle) \
-        $(ProjectName) \
-        $(BUILD_REPOSITORY_NAME) \
-        $(echo $BUILD_SOURCEBRANCH | sed 's#refs/heads/##')
+      
+      # Get source branch without refs/heads/
+      SOURCE_BRANCH=$(echo "$BUILD_SOURCEBRANCH" | sed 's#refs/heads/##')
+      
+      ./scripts/create-pr-with-required-reviewer.sh \
+        "$(WorkItemId)" \
+        "$(WorkItemTitle)" \
+        "$(ProjectName)" \
+        "$(Build.Repository.Name)" \
+        "$SOURCE_BRANCH"
 
       echo "✅ Pull Request created successfully"
     displayName: 📬 Step 10 - Create Pull Request
     env:
       AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
-      AZURE_DEVOPS_EXT_PAT: $(AZURE_DEVOPS_EXT_PAT)
 
   - task: PublishPipelineArtifact@1
     inputs:
