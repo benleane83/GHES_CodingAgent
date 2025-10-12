@@ -151,30 +151,58 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - Get the full work item details
    - **MANDATORY**: Use the provided script to retrieve work item information
    - **Script to use**: `./scripts/get-workitem.sh`
-   - **IMPORTANT**: The script now automatically reads `SYSTEM_COLLECTIONURI` (no need to export `System_CollectionUri`)
+   - **IMPORTANT**: The script automatically reads these environment variables:
+     - `SYSTEM_COLLECTIONURI` or `System_CollectionUri` - Organization URL
+     - `SYSTEM_TEAMPROJECT` or `System_TeamProject` - Project name (if not provided as argument)
+     - `AZURE_DEVOPS_PAT` - Personal Access Token (required)
    - **Script usage**:
      ```bash
-     # The script reads SYSTEM_COLLECTIONURI automatically in Azure Pipelines
+     # Using environment variables (automatic in Azure Pipelines)
      ./scripts/get-workitem.sh <work-item-id>
      
-     # Or specifying project explicitly (handles spaces automatically)
+     # Or specifying project explicitly (recommended)
      ./scripts/get-workitem.sh <work-item-id> "Project Name"
      ```
    - **Example**:
      ```bash
-     ./scripts/get-workitem.sh 412
-     # or
-     ./scripts/get-workitem.sh 412 "GitHub Copilot CLI"
+     # Using SYSTEM_TEAMPROJECT environment variable
+     ./scripts/get-workitem.sh 417
+     
+     # Specifying project explicitly (handles spaces automatically)
+     ./scripts/get-workitem.sh 417 "GitHub Copilot CLI"
      ```
    - **What to extract from the output**:
-     - Pay special attention to the **Description** field which contains the requirements
-     - **MANDATORY**: Note who created the work item (**Created By Email**) - you'll need this for:
-       - PR reviewer (required reviewer)
-       - Co-authored-by in commits
-     - **MANDATORY**: Note the project name (**Project**) - you'll need this for all scripts
-     - Note the current **State** and **Activity** values
+     - **Title**: Work item title
+     - **State**: Current state (To Do, Doing, Done)
+     - **Activity**: Current activity (Development, Testing, etc.)
+     - **Assigned To**: Current assignee
+     - **Created By Name**: Full name of creator (for co-author in commits)
+     - **Created By Email**: Email of creator (for PR reviewer and co-author)
+     - **Description**: Requirements and details
+     - **Project**: Project name (use this for all subsequent scripts)
+   - **Expected output format**:
+     ```
+     ✅ Work item retrieved successfully!
+     
+     ID:              417
+     Type:            Task
+     Title:           Task description
+     State:           To Do
+     Activity:        Development
+     Assigned To:     Unassigned
+     Created By:      John Doe (john@example.com)
+     
+     📝 Extracted Information for Scripts:
+     Project:              GitHub Copilot CLI
+     Created By Name:      John Doe
+     Created By Email:     john@example.com
+     ```
+   - **CRITICAL**: Save these values for later steps:
+     - Project name → for all script calls
+     - Created By Email → for PR reviewer
+     - Created By Name + Email → for git co-author
    - **DO NOT**: Try to call the Azure DevOps REST API directly
-   - **DO**: Use this script which handles URL encoding of project names with spaces
+   - **DO**: Use this script which handles URL encoding and base64 encoding correctly
    - **IF SCRIPT FAILS**: Report the error and STOP - do NOT use `az boards` as fallback
 
 3. **Add Initial Comment - DO THIS FIRST BEFORE ANY OTHER ACTION**:
@@ -191,18 +219,23 @@ When the user asks you to implement or work on a task from Azure DevOps:
    - **Script to use**: `./scripts/add-comment-to-workitem.sh`
    - **Script usage**:
      ```bash
-     ./scripts/add-comment-to-workitem.sh <organization> <project> <work-item-id> "👀🤖 Started working on this task"
+     ./scripts/add-comment-to-workitem.sh <organization> <project> <work-item-id> "Comment text in HTML format"
      ```
    - **Parameters to extract**:
-     - `organization`: From `System.CollectionUri` environment variable
-     - `project`: From the work item's `System.TeamProject` field
+     - `organization`: Extract from STEP 0 using `$ORG` variable
+     - `project`: From get-workitem.sh output (Project field)
      - `work-item-id`: The Work Item ID number
+     - `comment`: Use HTML format with emojis
    - **Example**:
      ```bash
-     ./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "👀🤖 Started working on this task"
+     # Extract organization (from STEP 0)
+     ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+     
+     # Add initial comment
+     ./scripts/add-comment-to-workitem.sh "$ORG" "GitHub Copilot CLI" 417 "👀🤖 Started working on this task"
      ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly for adding comments
-   - **DO**: Use this script which handles all the complexity
+   - **DO**: Use this script which handles URL encoding and base64 encoding correctly
    - **IF SCRIPT FAILS**: Report the error to the user and STOP - do NOT use `az boards` as fallback
 
 4. **Create a New Branch - MANDATORY BEFORE ANY CODE CHANGES**:
@@ -226,19 +259,23 @@ When the user asks you to implement or work on a task from Azure DevOps:
      ./scripts/assign-workitem.sh <organization> <project> <work-item-id> "GitHub Copilot CLI"
      ```
    - **Parameters to extract**:
-     - `organization`: From `SYSTEM_COLLECTIONURI` environment variable (extract using the command from STEP 0)
-     - `project`: From the work item's `System.TeamProject` field (from get-workitem.sh output)
+     - `organization`: Use the `$ORG` variable from STEP 0
+     - `project`: From get-workitem.sh output (Project field)
      - `work-item-id`: The Work Item ID number
      - `assignee`: ALWAYS use the exact string **"GitHub Copilot CLI"** (NOT an email address)
    - **Example**:
      ```bash
-     # First extract organization (from STEP 0)
+     # Using the organization from STEP 0
      ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
      
-     # Then assign work item
-     ./scripts/assign-workitem.sh "$ORG" "GitHub Copilot CLI" 372 "GitHub Copilot CLI"
+     # Assign work item
+     ./scripts/assign-workitem.sh "$ORG" "GitHub Copilot CLI" 417 "GitHub Copilot CLI"
      ```
-   - **VERIFICATION**: After running the script, verify the output shows "Work Item #XXX assigned!"
+   - **Expected output**:
+     ```
+     ✅ Work Item #417 assigned to 'GitHub Copilot CLI' successfully!
+     ```
+   - **VERIFICATION**: After running the script, verify the output shows "Work Item assigned!"
    - **DO NOT**: Try to call the Azure DevOps REST API directly
    - **DO NOT**: Skip this step - it is MANDATORY
    - **DO NOT**: Use an email address - use the exact string "GitHub Copilot CLI"
@@ -254,13 +291,21 @@ When the user asks you to implement or work on a task from Azure DevOps:
      ./scripts/update-workitem-state.sh <organization> <project> <work-item-id> "Doing"
      ```
    - **Parameters to extract**:
-     - `organization`: From `SYSTEM_COLLECTIONURI` environment variable (use the $ORG from STEP 0)
-     - `project`: From the work item's `System.TeamProject` field
+     - `organization`: Use the `$ORG` variable from STEP 0
+     - `project`: From get-workitem.sh output (Project field)
      - `work-item-id`: The Work Item ID number
+     - `state`: Typically "Doing" (valid states: "To Do", "Doing", "Done")
    - **Example**:
      ```bash
      # Using the organization from STEP 0
-     ./scripts/update-workitem-state.sh "$ORG" "GitHub Copilot CLI" 372 "Doing"
+     ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+     
+     # Update state to Doing
+     ./scripts/update-workitem-state.sh "$ORG" "GitHub Copilot CLI" 417 "Doing"
+     ```
+   - **Expected output**:
+     ```
+     ✅ Work Item #417 state updated to 'Doing' successfully!
      ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly
    - **DO**: Use this script which handles the PATCH request properly
@@ -403,8 +448,8 @@ When the user asks you to implement or work on a task from Azure DevOps:
      ./scripts/update-workitem-activity.sh <organization> <project> <work-item-id> <activity>
      ```
    - **Parameters to extract**:
-     - `organization`: From `System.CollectionUri` environment variable
-     - `project`: From the work item's `System.TeamProject` field
+     - `organization`: Use the `$ORG` variable from STEP 0
+     - `project`: From get-workitem.sh output (Project field)
      - `work-item-id`: The Work Item ID number
      - `activity`: One of the valid activity values (see options below)
    - **Activity field options**:
@@ -416,7 +461,15 @@ When the user asks you to implement or work on a task from Azure DevOps:
      - `Testing` - For writing tests, QA work, test automation
    - **Example**:
      ```bash
-     ./scripts/update-workitem-activity.sh returngisorg "My Project" 372 "Development"
+     # Using the organization from STEP 0
+     ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+     
+     # Update activity to Development
+     ./scripts/update-workitem-activity.sh "$ORG" "GitHub Copilot CLI" 417 "Development"
+     ```
+   - **Expected output**:
+     ```
+     ✅ Work Item #417 activity updated to 'Development' successfully!
      ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly
    - **DO**: Use this script which handles the PATCH request and validates activity values
@@ -448,7 +501,11 @@ When the user asks you to implement or work on a task from Azure DevOps:
        ```
      - **Example**:
        ```bash
-       ./scripts/add-comment-to-workitem.sh returngisorg "My Project" 372 "❌ <b>Error:</b> Failed to push branch. Permission denied.<br/><br/>Please check repository access permissions."
+       # Extract organization (from STEP 0)
+       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
+       
+       # Add error comment
+       ./scripts/add-comment-to-workitem.sh "$ORG" "GitHub Copilot CLI" 417 "❌ <b>Error:</b> Failed to push branch. Permission denied.<br/><br/>Please check repository access permissions."
        ```
    - **DO NOT**: Try to call the Azure DevOps REST API directly for error reporting
    - **DO**: Use this script to add error comments so the user sees them in Azure DevOps
