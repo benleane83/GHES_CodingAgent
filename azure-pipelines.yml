@@ -9,10 +9,9 @@ resources:
       connection: GHCopilotWH
 
 variables:
-  - group: 'GitHub Copilot CLI'
+  - group: "GitHub Copilot CLI"
   - name: MODEL
     value: claude-sonnet-4
-
 
 steps:
   - script: echo "🚀 Webhook triggered pipeline started!"
@@ -20,8 +19,8 @@ steps:
 
   - task: NodeTool@0
     inputs:
-      versionSource: 'spec'
-      versionSpec: '22.x'
+      versionSource: "spec"
+      versionSpec: "22.x"
       checkLatest: true
     displayName: ⚙️ Setup Node.js 22.x
 
@@ -79,7 +78,7 @@ steps:
       echo "🔗 Work Item URL: ${{ parameters.myWebhookResource.resource.url }}"
       echo ""
       echo "═══════════════════════════════════════════════════════════"
-      
+
       # Set pipeline variables for later use
       echo "##vso[task.setvariable variable=WorkItemId]${{ parameters.myWebhookResource.resource.id }}"
       echo "##vso[task.setvariable variable=WorkItemTitle]${{ parameters.myWebhookResource.resource.fields['System.Title'] }}"
@@ -92,7 +91,7 @@ steps:
     displayName: 📋 Parse Webhook Data
 
   - bash: |
-      npm install -g @github/copilot     
+      npm install -g @github/copilot
     displayName: 📦 Install Copilot CLI
 
   - bash: |
@@ -142,12 +141,9 @@ steps:
       echo "📌 Title: $(WorkItemTitle)"
       echo "📁 Project: $(ProjectName)"
       echo "═══════════════════════════════════════════════════════════"     
-    
-      
-      copilot -p "Analiza la descripción del work item y realiza los cambios necesarios en el código del repositorio para completar la tarea: Título: $(WorkItemTitle). Descripción: $(WorkItemDescription)" \     
-      --allow-all-tools \
-      --log-level debug \
-      --log-dir ./logs
+
+
+      copilot -p "Analiza la descripción del work item y realiza los cambios necesarios en el código del repositorio para completar la tarea: Título: $(WorkItemTitle). Descripción: $(WorkItemDescription)" --allow-all-tools --log-level debug --log-dir ./logs
 
     displayName: 🤖 Step 6 - Implement Changes with Copilot
     name: CopilotStep
@@ -158,14 +154,14 @@ steps:
 
   - bash: |
       echo "📝 Committing changes..."
-      
+
       # Extract creator info from work item
       CREATOR_INFO=$(./scripts/get-workitem.sh $(WorkItemId) "$(ProjectName)")
       CREATOR_NAME=$(echo "$CREATOR_INFO" | grep "Created By Name:" | sed 's/Created By Name:[[:space:]]*//')
       CREATOR_EMAIL=$(echo "$CREATOR_INFO" | grep "Created By Email:" | sed 's/Created By Email:[[:space:]]*//')
-      
+
       git add .
-      
+
       # Create commit message with co-author
       git commit -m "feat: Implement work item $(WorkItemId)" \
                  -m "" \
@@ -175,7 +171,7 @@ steps:
                  -m "" \
                  -m "" \
                  -m "Co-authored-by: ${CREATOR_NAME} <${CREATOR_EMAIL}>"
-      
+
       echo "✅ Changes committed"
     displayName: 💾 Step 7 - Commit Changes
     env:
@@ -184,15 +180,15 @@ steps:
   - bash: |
       echo "🚀 Pushing branch to remote..."
       ORG=$(echo $SYSTEM_COLLECTIONURI | sed 's|https://dev.azure.com/||' | sed 's|/.*||')
-      
+
       # URL encode the project name
       PROJECT_ENCODED=$(echo "$(ProjectName)" | jq -sRr @uri)
-      
+
       # Configure git remote with PAT
       git remote set-url origin "https://build:${AZURE_DEVOPS_PAT}@dev.azure.com/${ORG}/${PROJECT_ENCODED}/_git/$(Build.Repository.Name)"
-      
+
       git push -u origin copilot/$(WorkItemId)
-      
+
       echo "✅ Branch pushed successfully"
     displayName: 🚀 Step 8 - Push Branch
     env:
@@ -222,7 +218,7 @@ steps:
 
   - task: PublishPipelineArtifact@1
     inputs:
-      targetPath: 'logs'
-      artifact: 'copilot-logs'
+      targetPath: "logs"
+      artifact: "copilot-logs"
     displayName: 📦 Publish Logs
     condition: always()
