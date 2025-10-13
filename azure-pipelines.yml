@@ -51,10 +51,10 @@ steps:
 
   - task: Cache@2
     inputs:
-      key: 'npm-global | "$(Agent.OS)" | copilot | $(COPILOT_VERSION)'
+      key: 'npm-global | "$(Agent.OS)" | "copilot" | "$(COPILOT_VERSION)"'
       path: $(npm config get prefix)/lib/node_modules
       restoreKeys: |
-        npm-global | "$(Agent.OS)" | copilot
+        npm-global | "$(Agent.OS)" | "copilot"
     displayName: 📦 Cache Global NPM Packages
 
   - bash: |
