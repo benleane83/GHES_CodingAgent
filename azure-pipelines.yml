@@ -50,6 +50,13 @@ steps:
   - bash: npm install -g @github/copilot
     displayName: 📦 Install Copilot CLI
 
+  - bash: |
+      mkdir -p ~/.config
+      cp $(System.DefaultWorkingDirectory)/mcp-config.json ~/.config/mcp-config.json
+      echo "✅ MCP configuration copied to ~/.config/mcp-config.json"
+      cat ~/.config/mcp-config.json
+    displayName: ⚙️ Configure MCP Servers
+
   - template: templates/run-script.yml
     parameters:
       script: get-workitem.sh
