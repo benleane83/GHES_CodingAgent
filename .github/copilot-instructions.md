@@ -55,7 +55,16 @@ The implementation summary (`copilot-summary.md`) must be written in the same la
 
 You will receive the work item description in your prompt. Your responsibilities are:
 
-### 1. Implement the Requirements
+### 1. Check Available Tools
+- **FIRST**: List all available MCP servers and their tools
+- Report what tools you have access to from each MCP server
+- Confirm that you can access:
+  - Context7 MCP Server (for documentation)
+  - Fetch MCP Server (for retrieving web content)
+  - Any other configured MCP servers
+- If any expected MCP server is not available, report it immediately
+
+### 2. Implement the Requirements
 - **FIRST**: Read and understand the description provided in the prompt
 - **IF URLs are provided**: Use `fetch_webpage` tool to review ALL reference links before coding
 - **IF specific versions mentioned**: Verify version availability using Context7 or documentation
@@ -70,7 +79,7 @@ You will receive the work item description in your prompt. Your responsibilities
 - **DO NOT commit** - the pipeline will do it for you
 - **DO NOT push** - the pipeline will do it for you
 
-### 2. Generate Implementation Summary
+### 3. Generate Implementation Summary
 
 **CRITICAL - MANDATORY**: After implementing the changes, you MUST create TWO files in the repository root. The pipeline will fail if these files are missing.
 
