@@ -11,7 +11,7 @@ resources:
 variables:
   - group: "GitHub Copilot CLI"
   - name: MODEL
-    value: claude-sonnet-4
+    value: claude-sonnet-4.5
   - name: COPILOT_VERSION
     value: "0.0.339"
 
