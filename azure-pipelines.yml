@@ -116,7 +116,7 @@ steps:
 
   - bash: |
       echo "🧰 Check MCP access"
-      copilot -p "List all MCP servers and tools you have access to" --allow-all-tools
+      copilot -p "List tools defined in the current chat session (do not run commands, I am asking about tools defined in the LLM). Just the names in a table, nothing else." --allow-all-tools
     displayName: 🧰 Check MCP Access
     env:
       GH_TOKEN: $(GH_TOKEN)
