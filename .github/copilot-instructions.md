@@ -23,9 +23,27 @@ You will receive a work item description in your prompt. You MUST complete ALL o
 
 ---
 
-## 🚨 Important: Requested Version Compliance
+## 🚨 CRITICAL: Version Compliance & Reference Links
 
-If the work item description requests a specific version of any tool, framework, runtime, or SDK (for example, ".NET 9", "Node.js 20", "Python 3.12", etc.), **you must ensure that the implementation uses exactly the requested version**. Do not use an earlier or later version (e.g., do not use .NET 8 if .NET 9 is requested). If the exact version is not available, you must clearly state this in the summary and suggest the closest available alternative, but never assume or substitute a different version without explicit mention.
+### Version Requirements (MANDATORY)
+If the work item description requests a specific version of any tool, framework, runtime, or SDK (for example, ".NET 9", "Node.js 20", "Python 3.12", "React 18", etc.):
+
+- ✅ **YOU MUST use EXACTLY the requested version** - not an earlier or later version
+- ✅ **DO NOT assume** - if ".NET 9" is requested, DO NOT use .NET 8
+- ✅ **Verify the version** using Context7 or documentation before implementing
+- ⚠️ If the exact version is not available:
+  - Stop and clearly state this in the summary
+  - Suggest the closest available alternative
+  - Never substitute silently
+
+### Reference Links (MANDATORY)
+If the work item description includes URLs or reference links:
+
+- ✅ **USE the `fetch_webpage` tool** to read the content of ALL provided URLs before starting implementation
+- ✅ **Extract requirements** from the linked documentation, specifications, or examples
+- ✅ **Follow the patterns** shown in the reference links
+- ✅ **Validate** that your implementation matches the linked examples or specifications
+- ⚠️ **DO NOT proceed** without reviewing the links - they contain critical context
 
 ## 🌐 Language of Output
 
@@ -38,7 +56,9 @@ The implementation summary (`copilot-summary.md`) must be written in the same la
 You will receive the work item description in your prompt. Your responsibilities are:
 
 ### 1. Implement the Requirements
-- Read and understand the description provided in the prompt
+- **FIRST**: Read and understand the description provided in the prompt
+- **IF URLs are provided**: Use `fetch_webpage` tool to review ALL reference links before coding
+- **IF specific versions mentioned**: Verify version availability using Context7 or documentation
 - **USE Context7 MCP Server** to fetch up-to-date documentation, code examples, and best practices for any libraries, frameworks, or technologies mentioned in the work item
   - Context7 provides the latest official documentation and real-world examples
   - Query Context7 before implementing to ensure you're using current APIs and patterns

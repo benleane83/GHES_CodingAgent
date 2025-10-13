@@ -8,7 +8,17 @@
             "command": "npx",
             "args": [
                 "-y",
-                "@upstash/context7-mcp"               
+                "@upstash/context7-mcp"
+            ]
+        },
+        "fetch": {
+            "type": "stdio",
+            "command": "uvx",
+            "tools": [
+                "*"
+            ],
+            "args": [
+                "mcp-server-fetch"
             ]
         }
     }
