@@ -20,6 +20,12 @@
             "args": [
                 "mcp-server-fetch"
             ]
+        },
+        "time": {
+            "command": "uvx",
+            "args": [
+                "mcp-server-time"
+            ]
         }
     }
 }

@@ -19,11 +19,26 @@ steps:
   - script: echo "🚀 Webhook triggered pipeline started!"
     displayName: 🚀 Start Pipeline
 
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+      architecture: 'x64'
+    displayName: 🐍 Setup Python (Latest)
+
+  - bash: |
+      echo "Installing uvx (pipx runner)..."
+      pip install --upgrade pip
+      pip install uv
+      echo "✅ Python and uv installed"
+      python --version
+      uv --version
+    displayName: 📦 Install uv/uvx
+
   - task: NodeTool@0
     inputs:
       versionSource: "spec"
-      versionSpec: "22.x"
-      checkLatest: true
+      versionSpec: "22.x"     
     displayName: ⚙️ Setup Node.js 22.x
 
   - bash: |
@@ -74,10 +89,10 @@ steps:
     displayName: 📦 Install Copilot CLI
 
   - bash: |
-      mkdir -p ~/.config
-      cp $(System.DefaultWorkingDirectory)/mcp-config.json ~/.config/mcp-config.json
-      echo "✅ MCP configuration copied to ~/.config/mcp-config.json"
-      cat ~/.config/mcp-config.json
+      mkdir -p ~/.copilot
+      cp $(System.DefaultWorkingDirectory)/mcp-config.json ~/.copilot/mcp-config.json
+      echo "✅ MCP configuration copied to ~/.copilot/mcp-config.json"
+      cat ~/.copilot/mcp-config.json
     displayName: ⚙️ Configure MCP Servers
 
   - template: templates/run-script.yml
