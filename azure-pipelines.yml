@@ -11,7 +11,7 @@ resources:
 variables:
   - group: "GitHub Copilot CLI"
   - name: MODEL
-    value: claude-sonnet-4.5
+    value: claude-sonnet-4
   - name: COPILOT_VERSION
     value: "0.0.339"
 
@@ -130,7 +130,7 @@ steps:
       cp $(System.DefaultWorkingDirectory)/.github/copilot-instructions.md .github/
 
       # Run Copilot
-      copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" \
+      copilot -p "Implement the work item: Description: $(WorkItemDescription)" \
         --allow-all-tools \
         --log-level all \
         --log-dir ../logs \
