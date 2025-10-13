@@ -89,17 +89,11 @@ steps:
     displayName: 📦 Install Copilot CLI
 
   - bash: |
-      mkdir -p ~/.copilot
-      cp $(System.DefaultWorkingDirectory)/mcp-config.json ~/.copilot/mcp-config.json
-      echo "✅ MCP configuration copied to ~/.copilot/mcp-config.json"
-      cat ~/.copilot/mcp-config.json
+      mkdir -p ~/.config
+      cp $(System.DefaultWorkingDirectory)/mcp-config.json ~/.config/mcp-config.json
+      echo "✅ MCP configuration copied to ~/.config/mcp-config.json"
+      cat ~/.config/mcp-config.json
     displayName: ⚙️ Configure MCP Servers
-
-  - bash: |
-      mkdir -p ~/.copilot
-      cp $(System.DefaultWorkingDirectory)/.github/copilot-instructions.md ~/.copilot/copilot-instructions.md
-      echo "✅ Copilot instructions copied to ~/.copilot/"
-    displayName: 📋 Copy Copilot Instructions
 
   - template: templates/run-script.yml
     parameters:
@@ -137,16 +131,23 @@ steps:
       echo "📁 Project: $(ProjectName)"
       echo "📦 Repository: $(TargetRepoName)"
       echo "═══════════════════════════════════════════════════════════"
-
+      
       cd "$(TargetRepoDir)"
-
+      
+      # Copy instructions
+      mkdir -p .github
+      cp $(System.DefaultWorkingDirectory)/.github/copilot-instructions.md .github/
+      
       # Run Copilot
       copilot -p "Implement the work item: Title: $(WorkItemTitle) Description: $(WorkItemDescription)" \
         --allow-all-tools \
         --log-level all \
         --log-dir ../logs \
         --model $(MODEL)
-
+      
+      # Remove instructions
+      rm -f .github/copilot-instructions.md
+      
       echo "✅ Implementation completed"
     displayName: 🤖 Implement Changes with Copilot
     env:
