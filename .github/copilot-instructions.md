@@ -14,15 +14,15 @@ You are being called from an Azure DevOps Pipeline that handles the workflow aut
 
 You will receive a work item description in your prompt. You MUST complete ALL of these steps:
 
-1. **[ ] Check available tools** - List all MCP servers and tools you have access to
-2. **[ ] Read and understand** the work item description
-3. **[ ] Research before implementation**:
+
+1. **[ ] Read and understand** the work item description
+2. **[ ] Research before implementation**:
    - If URLs/references are provided in the description, use `fetch` to review them
    - Use Context7 to get up-to-date documentation for any libraries/frameworks mentioned
    - Verify version requirements if specific versions are requested
-4. **[ ] Implement the code changes** according to the requirements
-5. **[ ] Create `copilot-summary.md`** - Pull Request description file (MANDATORY)
-6. **[ ] Create `commit-message.md`** - Commit message file (MANDATORY)
+3. **[ ] Implement the code changes** according to the requirements
+4. **[ ] Create `copilot-summary.md`** - Pull Request description file (MANDATORY)
+5. **[ ] Create `commit-message.md`** - Commit message file (MANDATORY)
 
 
 ---
