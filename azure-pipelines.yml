@@ -49,10 +49,16 @@ steps:
       args: '"$(TargetRepoName)" "$(ProjectName)" "$(Build.Repository.Name)"'
       displayName: 🛎️ Clone Target Repository
 
+  - bash: |
+      NPM_PREFIX=$(npm config get prefix)
+      echo "##vso[task.setvariable variable=NPM_GLOBAL_PATH]${NPM_PREFIX}/lib/node_modules"
+      echo "NPM global path: ${NPM_PREFIX}/lib/node_modules"
+    displayName: 🔍 Detect NPM Global Path
+
   - task: Cache@2
     inputs:
       key: 'npm-global | "$(Agent.OS)" | "copilot" | "$(COPILOT_VERSION)"'
-      path: $(npm config get prefix)/lib/node_modules
+      path: $(NPM_GLOBAL_PATH)
       restoreKeys: |
         npm-global | "$(Agent.OS)" | "copilot"
     displayName: 📦 Cache Global NPM Packages
