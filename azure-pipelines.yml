@@ -115,6 +115,15 @@ steps:
     displayName: 🌿 Create Feature Branch
 
   - bash: |
+      echo "🧰 Check MCP access"
+      copilot -p "List all MCP servers and tools you have access to" --allow-all-tools
+    displayName: 🧰 Check MCP Access
+    env:
+      GH_TOKEN: $(GH_TOKEN)
+      AZURE_DEVOPS_PAT: $(AZURE_DEVOPS_EXT_PAT)
+      CONTEXT7_API_KEY: $(CONTEXT7_API_KEY)
+
+  - bash: |
       echo "🤖 Running GitHub Copilot CLI..."
       echo "═══════════════════════════════════════════════════════════"
       echo "📋 Work Item: $(WorkItemId)"
