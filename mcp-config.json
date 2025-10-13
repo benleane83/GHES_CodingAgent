@@ -1,31 +1,35 @@
 {
-    "mcpServers": {
-        "context7": {
-            "tools": [
-                "*"
-            ],
-            "type": "stdio",
-            "command": "npx",
-            "args": [
-                "-y",
-                "@upstash/context7-mcp"
-            ]
-        },
-        "fetch": {
-            "type": "stdio",
-            "command": "uvx",
-            "tools": [
-                "*"
-            ],
-            "args": [
-                "mcp-server-fetch"
-            ]
-        },
-        "time": {
-            "command": "uvx",
-            "args": [
-                "mcp-server-time"
-            ]
-        }
+  "mcpServers": {
+    "context7": {
+      "type": "local",
+      "command": "npx",
+      "tools": [
+        "*"
+      ],
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    },
+    "fetch": {
+      "type": "local",
+      "command": "uvx",
+      "tools": [
+        "*"
+      ],
+      "args": [
+        "mcp-server-fetch"
+      ]
+    },
+    "time": {
+      "type": "local",
+      "command": "uvx",
+      "tools": [
+        "*"
+      ],
+      "args": [
+        "mcp-server-time"
+      ]
     }
+  }
 }
