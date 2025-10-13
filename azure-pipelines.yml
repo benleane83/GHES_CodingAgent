@@ -95,6 +95,12 @@ steps:
       cat ~/.copilot/mcp-config.json
     displayName: ⚙️ Configure MCP Servers
 
+  - bash: |
+      mkdir -p ~/.copilot
+      cp $(System.DefaultWorkingDirectory)/.github/copilot-instructions.md ~/.copilot/copilot-instructions.md
+      echo "✅ Copilot instructions copied to ~/.copilot/"
+    displayName: 📋 Copy Copilot Instructions
+
   - template: templates/run-script.yml
     parameters:
       script: get-workitem.sh
@@ -134,19 +140,12 @@ steps:
 
       cd "$(TargetRepoDir)"
 
-      # Copy instructions
-      mkdir -p .github
-      cp $(System.DefaultWorkingDirectory)/.github/copilot-instructions.md .github/
-
       # Run Copilot
       copilot -p "Implement the work item: Title: $(WorkItemTitle) Description: $(WorkItemDescription)" \
         --allow-all-tools \
         --log-level all \
         --log-dir ../logs \
         --model $(MODEL)
-
-      # Remove instructions
-      rm -f .github/copilot-instructions.md
 
       echo "✅ Implementation completed"
     displayName: 🤖 Implement Changes with Copilot
