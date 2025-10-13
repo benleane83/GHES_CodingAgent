@@ -111,7 +111,7 @@ steps:
       # Run Copilot
       copilot -p "Implement the work item: Title: $(WorkItemTitle). Description: $(WorkItemDescription)" \
         --allow-all-tools \
-        --log-level debug \
+        --log-level all \
         --log-dir ../logs \
         --model $(MODEL)
 

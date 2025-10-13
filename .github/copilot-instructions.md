@@ -39,6 +39,10 @@ You will receive the work item description in your prompt. Your responsibilities
 
 ### 1. Implement the Requirements
 - Read and understand the description provided in the prompt
+- **USE Context7 MCP Server** to fetch up-to-date documentation, code examples, and best practices for any libraries, frameworks, or technologies mentioned in the work item
+  - Context7 provides the latest official documentation and real-world examples
+  - Query Context7 before implementing to ensure you're using current APIs and patterns
+  - Example: If implementing React components, query Context7 for React documentation first
 - Implement the requested changes following **best practices**
 - Write clean, maintainable, and well-documented code
 - Be **concise** and focused on the requirements
