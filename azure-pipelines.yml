@@ -138,7 +138,7 @@ steps:
       mkdir -p .github
       cp $(System.DefaultWorkingDirectory)/.github/copilot-instructions.md .github/
       
-      echo "This is the description that Copilot CLI is going to use to implement the task: \n $($(WorkItemDescription)"
+      echo "This is the description that Copilot CLI is going to use to implement the task: \n $(WorkItemDescription)"
 
       # Run Copilot
       copilot -p "Implement the work item following the description details: $(WorkItemDescription)" \
