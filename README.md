@@ -1,20 +1,100 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# 🤖 ADO Coding Agent
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+## 📋 Introducción
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+¡Hola developer 👋🏻! Este repositorio implementa un flujo en Azure Pipelines 🚀 que integra **GitHub Copilot CLI** 🤖 para generar código automáticamente a partir de Work Items 📋. El código del mismo fue utilizado para mi vídeo:
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+[![Automatiza la creación de código con IA en Azure DevOps y GitHub Copilot CLI](https://img.youtube.com/vi/ZS0LQA2_zZQ/maxresdefault.jpg)](https://youtu.be/ZS0LQA2_zZQ)
+
+### 🎯 Objetivos
+
+- ✅ Automatizar la creación de código mediante IA (GitHub Copilot)
+- ✅ Integrar GitHub Copilot CLI con Azure DevOps
+- ✅ Gestionar flujos de trabajo automáticos desde WebHooks
+- ✅ Crear ramas de características, commits y Pull Requests de forma automática
+- ✅ Vincular cambios con elementos de trabajo de Azure DevOps
+
+## 🚀 ¿Qué hace?
+
+El pipeline se activa mediante un **WebHook desde Azure DevOps** y realiza el siguiente flujo:
+
+1. 📖 **Lee el elemento de trabajo** - Obtiene la descripción y requisitos
+2. 🌿 **Crea una rama de características** - `copilot/<work-item-id>`
+3. 🤖 **Ejecuta GitHub Copilot CLI** - Genera el código automáticamente
+4. 💾 **Realiza un commit** - Guarda los cambios con mensajes descriptivos
+5. 🚀 **Hace push de la rama** - Sube los cambios al repositorio
+6. 📬 **Crea un Pull Request** - Abre la PR automáticamente
+7. 🔗 **Vincula todo en Azure DevOps** - Conecta la rama, commit y PR con el work item
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Azure DevOps** - Gestión de work items y pipelines
+- **GitHub Copilot CLI** - Generación automática de código con IA
+- **Bash Scripts** - Automatización y orquestación
+- **Node.js 22.x** - Runtime para Copilot CLI
+- **Python 3.x** - Herramientas auxiliares
+- **MCP Servers** - Context7 para documentación actualizada
+
+## 📦 Estructura del Proyecto
+
+```
+├── azure-pipelines.yml          # Definición del pipeline
+├── mcp-config.json              # Configuración de MCP Servers
+├── .github/
+│   └── copilot-instructions.md  # Instrucciones para Copilot
+└── scripts/                     # Scripts de automatización
+    ├── clone-target-repo.sh
+    ├── create-pr-and-link.sh
+    ├── push-branch.sh
+    └── ...
+```
+
+## ⚙️ Configuración Requerida
+
+### Variables de Entorno
+
+- `GH_TOKEN` - Token de GitHub con el permiso Copilot Requests
+- `AZURE_DEVOPS_PAT` - Personal Access Token de Azure DevOps del usuario que simula GitHub Copilot CLI
+- `CONTEXT7_API_KEY` - API key para Context7 (documentación)
+- `COPILOT_VERSION` - Versión de Copilot CLI a instalar, para evitar que deje de funcionar el flujo si algo importante ha cambiado
+- `MODEL` - Modelo de lenguaje a utilizar (ej. claude-sonnet-4)
+
+### WebHook de Azure DevOps
+
+El pipeline se activa mediante un WebHook configurado en Azure DevOps que dispara cuando se crean o actualizan elementos de trabajo.
+
+Si quieres ver cómo se configura el mismo puedes echar un vistazo a mi artículo [Cómo ejecutar un flujo de Azure Pipelines 🚀 cuando se crea un work item](https://www.returngis.net/2025/10/como-ejecutar-un-flujo-de-azure-pipelines-%f0%9f%9a%80-cuando-se-crea-un-work-item/)
+
+## 📝 Cómo Funciona el Pipeline
+
+1. **Webhook trigger** 📡 - Se dispara al crear/actualizar un work item
+2. **Parse data** 📋 - Extrae información del evento
+3. **Clone repo** 🛎️ - Clona el repositorio destino
+4. **Create branch** 🌿 - Crea rama de características
+5. **Run Copilot** 🤖 - Genera el código automáticamente
+6. **Commit & Push** 💾 - Guardar y subir cambios
+7. **Create PR** 📬 - Abre Pull Request automática
+8. **Link resources** 🔗 - Vincula todo en Azure DevOps
+
+## 🔄 Flujo de Trabajo
+
+```
+Work Item Created/Updated
+         ↓
+    Parse Webhook
+         ↓
+   Clone Repository
+         ↓
+  Create Branch (copilot/xxx)
+         ↓
+  Run GitHub Copilot
+         ↓
+   Commit Changes
+         ↓
+   Push to Remote
+         ↓
+  Create Pull Request
+         ↓
+Link PR to Work Item
+```
