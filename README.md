@@ -1,11 +1,20 @@
-# 🤖 ADO Coding Agent
+# 🤖 Azure DevOps Coding Agent gracias a GitHub Copilot CLI
 
-## 📋 Introducción
+<div align="center">
 
-¡Hola developer 👋🏻! Este repositorio implementa un flujo en Azure Pipelines 🚀 que integra **GitHub Copilot CLI** 🤖 para generar código automáticamente a partir de Work Items 📋. El código del mismo fue utilizado para mi vídeo:
+[![YouTube Channel Subscribers](https://img.shields.io/youtube/channel/subscribers/UC140iBrEZbOtvxWsJ-Tb0lQ?style=for-the-badge&logo=youtube&logoColor=white&color=red)](https://www.youtube.com/c/GiselaTorres?sub_confirmation=1)
+[![GitHub followers](https://img.shields.io/github/followers/0GiS0?style=for-the-badge&logo=github&logoColor=white)](https://github.com/0GiS0)
+[![LinkedIn Follow](https://img.shields.io/badge/LinkedIn-Sígueme-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/giselatorresbuitrago/)
+[![X Follow](https://img.shields.io/badge/X-Sígueme-black?style=for-the-badge&logo=x&logoColor=white)](https://twitter.com/0GiS0)
+
+</div>
+
+¡Hola developer 👋🏻! Este repositorio implementa un flujo en Azure Pipelines 🚀 que integra **GitHub Copilot CLI** 🤖 para generar código automáticamente a partir de Work Items 📋. El código del mismo fue utilizado para mi vídeo: 🚀 Lleva Azure DevOps al siguiente nivel con GitHub Copilot CLI 🤖
 
 
-[![Automatiza la creación de código con IA en Azure DevOps y GitHub Copilot CLI](https://img.youtube.com/vi/ZS0LQA2_zZQ/maxresdefault.jpg)](https://youtu.be/ZS0LQA2_zZQ)
+<a href="https://youtu.be/ZS0LQA2_zZQ">
+ <img src="https://img.youtube.com/vi/ZS0LQA2_zZQ/maxresdefault.jpg" alt="🚀 Lleva Azure DevOps al siguiente nivel con GitHub Copilot CLI 🤖" width="100%" />
+</a>
 
 ### 🎯 Objetivos
 
