@@ -13,7 +13,7 @@ variables:
   - name: MODEL
     value: claude-sonnet-4
   - name: COPILOT_VERSION
-    value: "0.0.339"
+    value: 0.0.346
 
 steps:
   - script: echo "🚀 Webhook triggered pipeline started!"
@@ -80,8 +80,8 @@ steps:
 
   - bash: |
       if ! command -v copilot &> /dev/null; then
-        echo "Installing @github/copilot..."
-        npm install -g @github/copilot
+        echo "Installing @github/copilot@$(COPILOT_VERSION)..."
+        npm install -g @github/copilot@$(COPILOT_VERSION)
       else
         echo "✅ @github/copilot already installed (from cache)"
         copilot --version
@@ -138,8 +138,10 @@ steps:
       mkdir -p .github
       cp $(System.DefaultWorkingDirectory)/.github/copilot-instructions.md .github/
       
+      echo "This is the description that Copilot CLI is going to use to implement the task: \n $($(WorkItemDescription)"
+
       # Run Copilot
-      copilot -p "Implement the work item: Title: $(WorkItemTitle) Description: $(WorkItemDescription)" \
+      copilot -p "Implement the work item following the description details: $(WorkItemDescription)" \
         --allow-all-tools \
         --log-level all \
         --log-dir ../logs \

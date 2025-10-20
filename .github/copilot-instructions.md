@@ -76,6 +76,10 @@ You will receive the work item description in your prompt. Your responsibilities
   - Context7 provides the latest official documentation and real-world examples
   - Query Context7 before implementing to ensure you're using current APIs and patterns
   - Example: If implementing React components, query Context7 for React documentation first
+- **IF creating a new project**: Create an appropriate `.gitignore` file for the programming language or framework
+  - Include common patterns to exclude compiled files, dependencies, build outputs, IDE files, etc.
+  - Examples: `node_modules/`, `*.pyc`, `bin/`, `obj/`, `.env`, `.DS_Store`, etc.
+  - Use standard gitignore templates for the chosen technology stack
 - Implement the requested changes following **best practices**
 - Write clean, maintainable, and well-documented code
 - Be **concise** and focused on the requirements
