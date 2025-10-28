@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Script para añadir un comentario a un Work Item de Azure DevOps
-# Uso: ./add-comment-to-workitem.sh <organization> <project> <work-item-id> <comment-text>
+# Script to add a comment to an Azure DevOps Work Item
+# Usage: ./add-comment-to-workitem.sh <organization> <project> <work-item-id> <comment-text>
 
 set -e
 
-# Función para mostrar uso
+# Function to display usage
 show_usage() {
     echo "Usage: $0 <organization> <project> <work-item-id> <comment-text>"
     echo ""
@@ -23,7 +23,7 @@ show_usage() {
     exit 1
 }
 
-# Validar argumentos
+# Validate arguments
 if [ $# -ne 4 ]; then
     echo "❌ Error: Incorrect number of arguments"
     echo ""
@@ -35,14 +35,14 @@ PROJECT="$2"
 WORK_ITEM_ID="$3"
 COMMENT_TEXT="$4"
 
-# Validar PAT
+# Validate PAT
 if [ -z "$AZURE_DEVOPS_PAT" ]; then
     echo "❌ Error: AZURE_DEVOPS_PAT environment variable is not set"
     echo "   Set it with: export AZURE_DEVOPS_PAT='your-pat-token'"
     exit 1
 fi
 
-# URL-encode el nombre del proyecto
+# URL-encode the project name
 PROJECT_ENCODED=$(echo "$PROJECT" | sed 's/ /%20/g')
 
 echo "💬 Adding comment to Azure DevOps Work Item"
@@ -53,14 +53,14 @@ echo "Work Item ID: $WORK_ITEM_ID"
 echo "Comment: $COMMENT_TEXT"
 echo ""
 
-# Codificar PAT en Base64 (sin saltos de línea)
+# Encode PAT in Base64 (without line breaks)
 if base64 --help 2>&1 | grep -q "wrap"; then
     PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 -w 0)
 else
     PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 | tr -d '\n')
 fi
 
-# Endpoint para agregar comentario
+# Endpoint to add comment
 API_URL="https://dev.azure.com/${ORGANIZATION}/${PROJECT_ENCODED}/_apis/wit/workItems/${WORK_ITEM_ID}/comments?api-version=7.0-preview.3"
 
 # Request Body
@@ -74,14 +74,14 @@ EOF
 echo "📝 Adding comment..."
 echo "--------------------"
 
-# Hacer la petición
+# Make the request
 RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
   "$API_URL" \
   -H "Content-Type: application/json" \
   -H "Authorization: Basic ${PAT_BASE64}" \
   -d "$REQUEST_BODY")
 
-# Extraer cuerpo y código de estado
+# Extract response body and HTTP status
 BODY=$(echo "$RESPONSE" | sed -e 's/HTTP_STATUS\:.*//g')
 STATUS=$(echo "$RESPONSE" | tr -d '\n' | sed -e 's/.*HTTP_STATUS://')
 

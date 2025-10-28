@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Script para crear una PR en Azure DevOps con un Required Reviewer
-# Uso: ./create-pr-with-required-reviewer.sh <organization> <project> <repository-id> <source-branch> <target-branch> <title> <description> <reviewer-email>
+# Script to create a PR in Azure DevOps with a Required Reviewer
+# Usage: ./create-pr-with-required-reviewer.sh <organization> <project> <repository-id> <source-branch> <target-branch> <title> <description> <reviewer-email>
 
 set -e
 
-# Función para mostrar uso
+# Function to display usage
 show_usage() {
     echo "Usage: $0 <organization> <project> <repository-id> <source-branch> <target-branch> <title> <description> <reviewer-email>"
     echo ""
@@ -27,7 +27,7 @@ show_usage() {
     exit 1
 }
 
-# Validar argumentos
+# Validate arguments
 if [ $# -ne 8 ]; then
     echo "❌ Error: Incorrect number of arguments (expected 8, got $#)"
     echo ""
@@ -43,14 +43,14 @@ TITLE="$6"
 DESCRIPTION="$7"
 REVIEWER_EMAIL="$8"
 
-# Validar PAT
+# Validate PAT
 if [ -z "$AZURE_DEVOPS_PAT" ]; then
     echo "❌ Error: AZURE_DEVOPS_PAT environment variable is not set"
     echo "   Set it with: export AZURE_DEVOPS_PAT='your-pat-token'"
     exit 1
 fi
 
-# URL-encode el nombre del proyecto
+# URL-encode the project name
 PROJECT_ENCODED=$(echo "$PROJECT" | sed 's/ /%20/g')
 
 echo "🔧 Creating Azure DevOps PR with Required Reviewer"
@@ -64,18 +64,18 @@ echo "Title: $TITLE"
 echo "Reviewer Email: $REVIEWER_EMAIL"
 echo ""
 
-# Codificar PAT en Base64 (sin saltos de línea)
+# Encode PAT in Base64 (without line breaks)
 if base64 --help 2>&1 | grep -q "wrap"; then
     PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 -w 0)
 else
     PAT_BASE64=$(echo -n ":${AZURE_DEVOPS_PAT}" | base64 | tr -d '\n')
 fi
 
-# Paso 1: Obtener el Identity ID del reviewer
+# Step 1: Get the reviewer's Identity ID
 echo "📋 Step 1: Finding reviewer Identity ID..."
 echo "-------------------------------------------"
 
-# Obtener el equipo del proyecto
+# Get the project team
 TEAM_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
   "https://dev.azure.com/${ORGANIZATION}/_apis/projects/${PROJECT_ENCODED}/teams?api-version=7.0" \
   -H "Authorization: Basic ${PAT_BASE64}")
@@ -98,7 +98,7 @@ fi
 
 echo "✅ Team ID: $TEAM_ID"
 
-# Obtener miembros del equipo y buscar por email
+# Get team members and search by email
 MEMBERS_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
   "https://dev.azure.com/${ORGANIZATION}/_apis/projects/${PROJECT_ENCODED}/teams/${TEAM_ID}/members?api-version=7.0" \
   -H "Authorization: Basic ${PAT_BASE64}")
@@ -126,11 +126,11 @@ echo "✅ Found reviewer: $REVIEWER_NAME"
 echo "✅ Identity ID: $REVIEWER_ID"
 echo ""
 
-# Paso 2: Crear la Pull Request en modo Draft con el reviewer como required
+# Step 2: Create the Pull Request in Draft mode with the reviewer as required
 echo "📝 Step 2: Creating Pull Request in Draft mode..."
 echo "-------------------------------------------"
 
-# Escapar comillas en título y descripción para JSON
+# Escape quotes in title and description for JSON
 TITLE_ESCAPED=$(echo "$TITLE" | sed 's/"/\\"/g')
 DESCRIPTION_ESCAPED=$(echo "$DESCRIPTION" | sed 's/"/\\"/g' | sed 's/$/\\n/g' | tr -d '\n' | sed 's/\\n$//')
 
@@ -181,11 +181,11 @@ echo "✅ PR ID: $PR_ID"
 echo "✅ PR URL: $PR_URL"
 echo ""
 
-# Paso 3: Verificar que el reviewer es Required
+# Step 3: Verify that the reviewer is Required
 echo "🔍 Step 3: Verifying Required Reviewer status..."
 echo "-------------------------------------------"
 
-# Obtener información de los reviewers
+# Get reviewer information
 VERIFY_URL="https://dev.azure.com/${ORGANIZATION}/${PROJECT_ENCODED}/_apis/git/repositories/${REPOSITORY_ID}/pullRequests/${PR_ID}/reviewers?api-version=6.1-preview.1"
 
 VERIFY_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
@@ -225,5 +225,5 @@ echo "PR URL: $PR_URL"
 echo "Required Reviewer: $REVIEWER_NAME ($REVIEWER_EMAIL)"
 echo ""
 
-# Retornar el PR ID para que pueda ser usado por el caller
+# Return the PR ID so it can be used by the caller
 echo "$PR_ID"
