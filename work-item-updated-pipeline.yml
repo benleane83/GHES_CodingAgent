@@ -13,24 +13,96 @@ variables:
   - name: MODEL
     value: claude-haiku-4.5
   - name: COPILOT_VERSION
-    value: 0.0.352
+    value: 0.0.353
 
 steps:
-  - script: echo "🚀 Webhook triggered pipeline started!"
-
+  - script: echo "[ROCKET] Webhook triggered pipeline started!"
 
   - bash: |
-      echo "🆔 Work Item ID: ${{ parameters.myWebhookResource.resource.id }}"
-      echo "📝 Work Item Title: ${{ parameters.myWebhookResource.resource.fields['System.Title'] }}"
-      echo "🔖 Work Item Type: ${{ parameters.myWebhookResource.resource.fields['System.WorkItemType'] }}"
-      echo "🔄 Work Item State: ${{ parameters.myWebhookResource.resource.fields['System.State'] }}"
-      echo "👤 Work Item Created By: ${{ parameters.myWebhookResource.resource.fields['System.CreatedBy'] }}"
-      echo "👥 Work Item Assigned To: ${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'] }}"
-      echo "📜 Work Item Description: ${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
-      echo "📁 Project Name: ${{ parameters.myWebhookResource.resource.fields['System.TeamProject'] }}"
-      echo "🏷️ Work Item Tags: ${{ parameters.myWebhookResource.resource.fields['System.Tags'] }}"
+      cat > /tmp/webhook_payload.json <<'EOF'
+      ${{ convertToJson(parameters.myWebhookResource) }}
+      EOF
+      echo "[JSON] Payload JSON:"
+      cat /tmp/webhook_payload.json | jq . 2>/dev/null || cat /tmp/webhook_payload.json
+    displayName: '[JSON] Display Raw Webhook Payload'
 
+  - bash: |
+      echo "==============================================="
+      echo "📌 EVENT INFORMATION"
+      echo "==============================================="
+      echo "🆔 Event ID: ${{ parameters.myWebhookResource.id }}"
+      echo "📨 Event Type: ${{ parameters.myWebhookResource.eventType }}"
+      echo "🏢 Publisher ID: ${{ parameters.myWebhookResource.publisherId }}"
+      echo "🕐 Created Date: ${{ parameters.myWebhookResource.createdDate }}"
+      echo ""
+      echo "==============================================="
+      echo "💬 MESSAGE"
+      echo "==============================================="
+      echo "📝 Text: ${{ parameters.myWebhookResource.message.text }}"
+      echo ""
+      echo "==============================================="
+      echo "📋 DETAILED MESSAGE"
+      echo "==============================================="
+      echo "📝 Text: ${{ parameters.myWebhookResource.detailedMessage.text }}"
+      echo ""
+      echo "==============================================="
+      echo "👤 RESOURCE - UPDATED BY"
+      echo "==============================================="
+      echo "👤 User Name: ${{ parameters.myWebhookResource.resource.revisedBy.displayName }}"
+      echo "🆔 User ID: ${{ parameters.myWebhookResource.resource.revisedBy.id }}"
+      echo "📧 Unique Name: ${{ parameters.myWebhookResource.resource.revisedBy.uniqueName }}"
+      echo ""
+      echo "==============================================="
+      echo "� WORK ITEM INFORMATION"
+      echo "==============================================="
+      echo "🆔 Work Item ID: ${{ parameters.myWebhookResource.resource.revision.fields['System.Id'] }}"
+      echo "📝 Title: ${{ parameters.myWebhookResource.resource.revision.fields['System.Title'] }}"
+      echo "🔖 Type: ${{ parameters.myWebhookResource.resource.revision.fields['System.WorkItemType'] }}"
+      echo "🔄 State: ${{ parameters.myWebhookResource.resource.revision.fields['System.State'] }}"
+      echo "💡 Reason: ${{ parameters.myWebhookResource.resource.revision.fields['System.Reason'] }}"
+      echo "📁 Project: ${{ parameters.myWebhookResource.resource.revision.fields['System.TeamProject'] }}"
+      echo "� Area: ${{ parameters.myWebhookResource.resource.revision.fields['System.AreaPath'] }}"
+      echo "🔁 Iteration: ${{ parameters.myWebhookResource.resource.revision.fields['System.IterationPath'] }}"
+      echo ""
+      echo "==============================================="
+      echo "👥 ASSIGNMENT INFORMATION"
+      echo "==============================================="
+      echo "👤 Created By: ${{ parameters.myWebhookResource.resource.revision.fields['System.CreatedBy'].displayName }}"
+      echo "✏️ Changed By: ${{ parameters.myWebhookResource.resource.revision.fields['System.ChangedBy'].displayName }}"
+      echo "📅 Created Date: ${{ parameters.myWebhookResource.resource.revision.fields['System.CreatedDate'] }}"
+      echo "📅 Changed Date: ${{ parameters.myWebhookResource.resource.revision.fields['System.ChangedDate'] }}"
+      echo ""
+      echo "==============================================="
+      echo "🔀 FIELD CHANGES"
+      echo "==============================================="
+      echo "📊 Revision Number:"
+      echo "   Old: ${{ parameters.myWebhookResource.resource.fields['System.Rev'].oldValue }}"
+      echo "   New: ${{ parameters.myWebhookResource.resource.fields['System.Rev'].newValue }}"
+      echo ""
+      echo "🔄 State Change:"
+      echo "   Old: ${{ parameters.myWebhookResource.resource.fields['System.State'].oldValue }}"
+      echo "   New: ${{ parameters.myWebhookResource.resource.fields['System.State'].newValue }}"
+      echo ""
+      echo "💡 Reason Change:"
+      echo "   Old: ${{ parameters.myWebhookResource.resource.fields['System.Reason'].oldValue }}"
+      echo "   New: ${{ parameters.myWebhookResource.resource.fields['System.Reason'].newValue }}"
+      echo ""
+      echo "👥 Assignment Change:"
+      echo "   Old: ${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'].oldValue }}"
+      echo "   New: ${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'].newValue }}"
+      echo ""
+      echo "🔴 Severity Change:"
+      echo "   Old: ${{ parameters.myWebhookResource.resource.fields['Microsoft.VSTS.Common.Severity'].oldValue }}"
+      echo "   New: ${{ parameters.myWebhookResource.resource.fields['Microsoft.VSTS.Common.Severity'].newValue }}"
+      echo ""
+      echo "==============================================="
+      echo "🏢 RESOURCE CONTAINERS"
+      echo "==============================================="
+      echo "📦 Collection ID: ${{ parameters.myWebhookResource.resourceContainers.collection.id }}"
+      echo "🏢 Account ID: ${{ parameters.myWebhookResource.resourceContainers.account.id }}"
+      echo "📊 Project ID: ${{ parameters.myWebhookResource.resourceContainers.project.id }}"
+      echo ""
       
-    displayName: 📋 Show Webhook Data
+    displayName: 📋 Show Webhook Event Data
 
 
