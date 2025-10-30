@@ -1,0 +1,208 @@
+name: 🤖 GitHub Copilot Coder
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  copilot-generate:
+    # Only run when the issue has the 'copilot-generate' label
+    if: contains(github.event.issue.labels.*.name, 'copilot-generate')
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    
+    env:
+      MODEL: claude-haiku-4.5
+      COPILOT_VERSION: 0.0.352
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+      ISSUE_BODY: ${{ github.event.issue.body }}
+      ISSUE_ASSIGNEE: ${{ github.event.issue.assignee.login }}
+      ISSUE_CREATOR: ${{ github.event.issue.user.login }}
+      REPO_NAME: ${{ github.repository }}
+      BRANCH_NAME: copilot/${{ github.event.issue.number }}
+    
+    steps:
+      - name: 🚀 Start Workflow
+        run: |
+          echo "🚀 GitHub Copilot Coder workflow started!"
+          echo "═══════════════════════════════════════════════════════════"
+          echo "📋 Issue: #${{ env.ISSUE_NUMBER }}"
+          echo "📌 Title: ${{ env.ISSUE_TITLE }}"
+          echo "👤 Creator: ${{ env.ISSUE_CREATOR }}"
+          echo "📦 Repository: ${{ env.REPO_NAME }}"
+          echo "🌿 Branch: ${{ env.BRANCH_NAME }}"
+          echo "═══════════════════════════════════════════════════════════"
+      
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+      
+      - name: 🏷️ Update Issue Labels - In Progress
+        run: |
+          gh issue edit ${{ env.ISSUE_NUMBER }} \
+            --add-label "in-progress" \
+            --remove-label "copilot-generate"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: 🐍 Setup Python (Latest)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      
+      - name: 📦 Install uv/uvx
+        run: |
+          echo "Installing uvx (pipx runner)..."
+          pip install --upgrade pip
+          pip install uv
+          echo "✅ Python and uv installed"
+          python --version
+          uv --version
+      
+      - name: ⚙️ Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      
+      - name: 🔍 Detect NPM Global Path
+        id: npm-path
+        run: |
+          NPM_PREFIX=$(npm config get prefix)
+          echo "NPM_GLOBAL_PATH=${NPM_PREFIX}/lib/node_modules" >> $GITHUB_ENV
+          echo "NPM global path: ${NPM_PREFIX}/lib/node_modules"
+      
+      - name: 📦 Cache Global NPM Packages
+        uses: actions/cache@v4
+        with:
+          key: npm-global-${{ runner.os }}-copilot-${{ env.COPILOT_VERSION }}
+          path: ${{ env.NPM_GLOBAL_PATH }}
+          restore-keys: |
+            npm-global-${{ runner.os }}-copilot-
+      
+      - name: 📦 Install Copilot CLI
+        run: |
+          if ! command -v copilot &> /dev/null; then
+            echo "Installing @github/copilot@${{ env.COPILOT_VERSION }}..."
+            npm install -g @github/copilot@${{ env.COPILOT_VERSION }}
+          else
+            echo "✅ @github/copilot already installed (from cache)"
+            copilot --version
+          fi
+      
+      - name: ⚙️ Configure MCP Servers
+        run: |
+          mkdir -p ~/.config
+          cp mcp-config.json ~/.config/mcp-config.json
+          echo "✅ MCP configuration copied to ~/.config/mcp-config.json"
+          cat ~/.config/mcp-config.json
+      
+      - name: 🧰 Check MCP Access
+        run: |
+          echo "🧰 Verifying MCP server access..."
+          copilot -p "List tools defined in the current chat session (do not run commands, I am asking about tools defined in the LLM). Just the names in a table, nothing else." --allow-all-tools
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+      
+      - name: 🌿 Create Feature Branch
+        run: |
+          echo "🌿 Creating feature branch..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b ${{ env.BRANCH_NAME }}
+          echo "✅ Branch ${{ env.BRANCH_NAME }} created"
+      
+      - name: 🤖 Implement Changes with Copilot
+        run: |
+          echo "🤖 Running GitHub Copilot CLI..."
+          echo "═══════════════════════════════════════════════════════════"
+          echo "📋 Issue: #${{ env.ISSUE_NUMBER }}"
+          echo "📌 Title: ${{ env.ISSUE_TITLE }}"
+          echo "═══════════════════════════════════════════════════════════"
+          
+          echo "This is the description that Copilot CLI is going to use to implement the task:"
+          echo "${{ env.ISSUE_BODY }}"
+          
+          mkdir -p logs
+          
+          # Run Copilot
+          copilot -p "Implement the GitHub issue following the description details: ${{ env.ISSUE_BODY }}" \
+            --allow-all-tools \
+            --log-level all \
+            --log-dir logs \
+            --model ${{ env.MODEL }}
+          
+          echo "✅ Implementation completed"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+      
+      - name: 💾 Commit Changes
+        run: |
+          ./scripts/prepare-commit.sh "${{ env.ISSUE_NUMBER }}" "${{ env.ISSUE_TITLE }}" "${{ env.ISSUE_CREATOR }}"
+      
+      - name: 🚀 Push Branch
+        run: |
+          ./scripts/push-branch.sh "${{ env.BRANCH_NAME }}"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: 📬 Create Pull Request
+        id: create-pr
+        run: |
+          # Check if copilot-summary.md exists
+          if [ -f "copilot-summary.md" ]; then
+            PR_BODY=$(cat copilot-summary.md)
+          else
+            PR_BODY="## 🤖 Automated Implementation
+          
+          This PR was automatically generated by GitHub Copilot CLI.
+          
+          ### 📋 Related Issue
+          Closes #${{ env.ISSUE_NUMBER }}
+          
+          ### 📝 Changes
+          Please review the changes made by Copilot CLI."
+          fi
+          
+          # Create PR and capture URL
+          PR_URL=$(gh pr create \
+            --title "${{ env.ISSUE_TITLE }}" \
+            --body "$PR_BODY" \
+            --base main \
+            --head ${{ env.BRANCH_NAME }} \
+            --label "copilot-generated" \
+            --assignee "${{ env.ISSUE_CREATOR }}")
+          
+          echo "PR_URL=$PR_URL" >> $GITHUB_ENV
+          echo "✅ Pull Request created: $PR_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: 💬 Add Completion Comment to Issue
+        run: |
+          ./scripts/post-workflow-comment.sh "${{ env.ISSUE_NUMBER }}" "${{ env.PR_URL }}"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: 🏷️ Update Issue Labels - Completed
+        run: |
+          gh issue edit ${{ env.ISSUE_NUMBER }} \
+            --add-label "completed,ready-for-review" \
+            --remove-label "in-progress"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: 📦 Publish Logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: copilot-logs
+          path: logs/
+          retention-days: 30

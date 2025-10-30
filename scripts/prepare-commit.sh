@@ -2,19 +2,28 @@
 set -e
 
 # Script to prepare commit message and commit changes
-# Usage: prepare-commit.sh <work_item_id> <work_item_title> <project_name>
+# Usage (GHES): prepare-commit.sh <issue_number> <issue_title> <creator_username>
+# Usage (ADO): prepare-commit.sh <work_item_id> <work_item_title> <project_name>
 
-WORK_ITEM_ID="$1"
-WORK_ITEM_TITLE="$2"
-PROJECT_NAME="$3"
+ISSUE_NUMBER="$1"
+ISSUE_TITLE="$2"
+CREATOR_USERNAME="$3"
 SCRIPTS_DIR="$(dirname "$0")"
 
 echo "📝 Preparing commit..."
 
-# Extract creator info from work item
-CREATOR_INFO=$("$SCRIPTS_DIR/get-workitem.sh" "$WORK_ITEM_ID" "$PROJECT_NAME")
-CREATOR_NAME=$(echo "$CREATOR_INFO" | grep "Created By Name:" | sed 's/Created By Name:[[:space:]]*//')
-CREATOR_EMAIL=$(echo "$CREATOR_INFO" | grep "Created By Email:" | sed 's/Created By Email:[[:space:]]*//')
+# For GHES: Use GitHub username, construct email from username
+# For ADO: Extract from work item (if get-workitem.sh exists)
+if [ -f "$SCRIPTS_DIR/get-workitem.sh" ]; then
+  # ADO mode (backwards compatibility)
+  CREATOR_INFO=$("$SCRIPTS_DIR/get-workitem.sh" "$ISSUE_NUMBER" "$CREATOR_USERNAME")
+  CREATOR_NAME=$(echo "$CREATOR_INFO" | grep "Created By Name:" | sed 's/Created By Name:[[:space:]]*//')
+  CREATOR_EMAIL=$(echo "$CREATOR_INFO" | grep "Created By Email:" | sed 's/Created By Email:[[:space:]]*//')
+else
+  # GHES mode
+  CREATOR_NAME="$CREATOR_USERNAME"
+  CREATOR_EMAIL="${CREATOR_USERNAME}@users.noreply.github.com"
+fi
 
 echo "👤 Co-author: $CREATOR_NAME <$CREATOR_EMAIL>"
 
@@ -35,9 +44,9 @@ if [ -f "commit-message.md" ]; then
 else
   echo "⚠️  commit-message.md not found, using default message"
   cat > .final-commit-msg.txt << EOF
-feat: Implement work item ${WORK_ITEM_ID}
+feat: Implement issue ${ISSUE_NUMBER}
 
-${WORK_ITEM_TITLE}
+${ISSUE_TITLE}
 
 Changes implemented by GitHub Copilot CLI
 
