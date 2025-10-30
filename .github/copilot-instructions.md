@@ -1,21 +1,21 @@
-# GitHub Copilot Instructions for Azure Pipeline
+# GitHub Copilot Instructions for GitHub Actions Workflow
 
 ## 🎯 Your Role
 
-You are being called from an Azure DevOps Pipeline that handles the workflow automatically.
+You are being called from a GitHub Actions workflow that handles the automation for you.
 
-**What the Pipeline Does FOR YOU**:
-- ✅ Creates the feature branch (`copilot/<work-item-id>`)
+**What the Workflow Does FOR YOU**:
+- ✅ Creates the feature branch (`copilot/<issue-number>`)
 - ✅ Commits your changes with co-author attribution
-- ✅ Pushes the branch to Azure DevOps
-- ✅ Creates the Pull Request with required reviewer
+- ✅ Pushes the branch to GitHub
+- ✅ Creates the Pull Request and links it to the issue
 
 ## ✅ YOUR MANDATORY CHECKLIST
 
-You will receive a work item description in your prompt. You MUST complete ALL of these steps:
+You will receive a GitHub issue description in your prompt. You MUST complete ALL of these steps:
 
 
-1. **[ ] Read and understand** the work item description
+1. **[ ] Read and understand** the issue description
 2. **[ ] Research before implementation**:
    - If URLs/references are provided in the description, use `fetch` to review them
    - Use Context7 to get up-to-date documentation for any libraries/frameworks mentioned
@@ -72,7 +72,7 @@ You will receive the work item description in your prompt. Your responsibilities
 - **FIRST**: Read and understand the description provided in the prompt
 - **IF URLs are provided**: Use `fetch_webpage` tool to review ALL reference links before coding
 - **IF specific versions mentioned**: Verify version availability using Context7 or documentation
-- **USE Context7 MCP Server** to fetch up-to-date documentation, code examples, and best practices for any libraries, frameworks, or technologies mentioned in the work item
+- **USE Context7 MCP Server** to fetch up-to-date documentation, code examples, and best practices for any libraries, frameworks, or technologies mentioned in the issue
   - Context7 provides the latest official documentation and real-world examples
   - Query Context7 before implementing to ensure you're using current APIs and patterns
   - Example: If implementing React components, query Context7 for React documentation first
@@ -83,13 +83,13 @@ You will receive the work item description in your prompt. Your responsibilities
 - Implement the requested changes following **best practices**
 - Write clean, maintainable, and well-documented code
 - Be **concise** and focused on the requirements
-- **IMPORTANT**: You are already on the `copilot/<work-item-id>` branch - just write the code
-- **DO NOT commit** - the pipeline will do it for you
-- **DO NOT push** - the pipeline will do it for you
+- **IMPORTANT**: You are already on the `copilot/<issue-number>` branch - just write the code
+- **DO NOT commit** - the workflow will do it for you
+- **DO NOT push** - the workflow will do it for you
 
 ### 3. Generate Implementation Summary
 
-**CRITICAL - MANDATORY**: After implementing the changes, you MUST create TWO files in the repository root. The pipeline will fail if these files are missing.
+**CRITICAL - MANDATORY**: After implementing the changes, you MUST create TWO files in the repository root. The workflow will fail if these files are missing.
 
 #### A) `copilot-summary.md` - Pull Request Description
 
@@ -183,4 +183,4 @@ Before you finish, verify that you have created:
 1. ✅ `copilot-summary.md` - in the repository root
 2. ✅ `commit-message.md` - in the repository root
 
-**The pipeline will fail without these files!**
+**The workflow will fail without these files!**

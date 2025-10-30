@@ -29,3 +29,12 @@ out/
 # Test outputs
 test-results/
 coverage/
+
+# Copilot workflow artifacts
+logs/
+copilot-summary.md
+commit-message.md
+.final-commit-msg.txt
+
+# MCP config (if sensitive)
+# .config/mcp-config.json
