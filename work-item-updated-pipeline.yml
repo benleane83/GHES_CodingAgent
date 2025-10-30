@@ -16,6 +16,18 @@ variables:
     value: 0.0.353
 
 steps:
+
+  - bash: |
+      echo "[CHECK] Buscando comentario para el usuario 19DAE5DA-4B58-6756-B0D6-ACC8BE43BE2D..."
+      echo "${{ parameters.myWebhookResource.detailedMessage.text }}" | grep -q "@<19DAE5DA-4B58-6756-B0D6-ACC8BE43BE2D>"
+      if [ $? -eq 0 ]; then
+        echo "Comentario para el usuario detectado. Continuando flujo..."
+      else
+        echo "No hay comentario para el usuario. Finalizando pipeline."
+        exit 0
+      fi
+    displayName: '[CHECK] Detectar comentario para usuario específico'
+
   - script: echo "[ROCKET] Webhook triggered pipeline started!"
 
   - bash: |
