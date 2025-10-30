@@ -1,0 +1,36 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+resources:
+  webhooks:
+    - webhook: myWebhookResource
+      connection: WorkItemUpdatedWH
+
+variables:
+  - group: "GitHub Copilot CLI"
+  - name: MODEL
+    value: claude-haiku-4.5
+  - name: COPILOT_VERSION
+    value: 0.0.352
+
+steps:
+  - script: echo "🚀 Webhook triggered pipeline started!"
+
+
+  - bash: |
+      echo "🆔 Work Item ID: ${{ parameters.myWebhookResource.resource.id }}"
+      echo "📝 Work Item Title: ${{ parameters.myWebhookResource.resource.fields['System.Title'] }}"
+      echo "🔖 Work Item Type: ${{ parameters.myWebhookResource.resource.fields['System.WorkItemType'] }}"
+      echo "🔄 Work Item State: ${{ parameters.myWebhookResource.resource.fields['System.State'] }}"
+      echo "👤 Work Item Created By: ${{ parameters.myWebhookResource.resource.fields['System.CreatedBy'] }}"
+      echo "👥 Work Item Assigned To: ${{ parameters.myWebhookResource.resource.fields['System.AssignedTo'] }}"
+      echo "📜 Work Item Description: ${{ parameters.myWebhookResource.resource.fields['System.Description'] }}"
+      echo "📁 Project Name: ${{ parameters.myWebhookResource.resource.fields['System.TeamProject'] }}"
+      echo "🏷️ Work Item Tags: ${{ parameters.myWebhookResource.resource.fields['System.Tags'] }}"
+
+      
+    displayName: 📋 Show Webhook Data
+
+
