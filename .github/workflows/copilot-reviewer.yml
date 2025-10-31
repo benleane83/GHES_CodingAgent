@@ -2,7 +2,7 @@ name: 🤖 Copilot PR Reviewer
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, labeled]
     branches:
       - main
       - develop
