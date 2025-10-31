@@ -37,7 +37,6 @@ This repository implements an automated coding workflow using **GitHub Copilot C
 2. **Create Required Labels**
    
    The workflow uses these labels (create them if they don't exist):
-   - `copilot-task` - Marks issue as suitable for Copilot
    - `copilot-generate` - Triggers the workflow
    - `in-progress` - Workflow is running
    - `completed` - Workflow completed successfully
@@ -46,7 +45,7 @@ This repository implements an automated coding workflow using **GitHub Copilot C
 
 ### 2️⃣ Create an Issue
 
-Use the **🤖 Copilot Task** issue template or create a standard issue with:
+Create a standard issue with:
 
 ```markdown
 ## 📋 Task Description
@@ -141,14 +140,12 @@ Update Labels (completed, ready-for-review)
 .github/
 ├── workflows/
 │   └── copilot-coder.yml        # Main GitHub Actions workflow
-├── ISSUE_TEMPLATE/
-│   └── copilot-task.md          # Issue template for Copilot tasks
 └── copilot-instructions.md      # Instructions for Copilot CLI
 
 scripts/
 ├── prepare-commit.sh            # Prepare commit with co-author
 ├── push-branch.sh               # Push branch to remote
-├── update-issue-labels.sh       # Update GitHub issue labels
+├── post-workflow-comment.sh     # Post completion comment
 └── post-workflow-comment.sh     # Post completion comment
 
 docs/

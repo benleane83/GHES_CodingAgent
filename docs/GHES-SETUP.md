@@ -94,11 +94,11 @@ Edit `mcp-config.json` to add or remove MCP servers:
 
 ## 📝 Step 4: Create Issues for Copilot
 
-### Using the Issue Template
+### Creating an Issue
 
 1. Go to **Issues** → **New Issue**
-2. Select **🤖 Copilot Task** template
-3. Fill in the task description, acceptance criteria, and technical details
+2. Create a standard issue with your task description
+3. Include clear acceptance criteria and technical details (if applicable)
 4. Create the issue
 
 ### Triggering the Workflow
@@ -113,7 +113,6 @@ To trigger code generation:
 
 The workflow manages issue states using labels:
 
-- **`copilot-task`**: Marks issue as suitable for Copilot (applied by template)
 - **`copilot-generate`**: User adds to trigger workflow (automatically removed when workflow starts)
 - **`in-progress`**: Workflow adds when code generation starts
 - **`completed`**: Workflow adds when code generation finishes

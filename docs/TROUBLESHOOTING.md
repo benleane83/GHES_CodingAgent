@@ -243,7 +243,6 @@ Error: Base branch does not exist
 
 2. **Label doesn't exist**:
    - Create labels manually:
-     - `copilot-task`
      - `copilot-generate`
      - `in-progress`
      - `completed`
