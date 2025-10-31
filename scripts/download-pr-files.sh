@@ -3,7 +3,7 @@
 # Download PR files from GHES using GitHub API
 # Usage: ./download-pr-files.sh <GHES_HOST> <OWNER> <REPO> <PR_NUMBER> <TOKEN> <OUTPUT_DIR>
 
-set -e
+set -eo pipefail
 
 echo "📁 Downloading Modified PR Files from GHES"
 echo "=========================================="
@@ -171,7 +171,7 @@ while IFS= read -r filepath; do
         fi
         
         # Download from target (base) branch if it exists
-        if download_file "$filepath" "$BASE_SHA" "target" "target branch"; then
+        if download_file "$filepath" "$BASE_SHA" "target" "target branch" || true; then
             ((SUCCESSFUL_DOWNLOADS++))
         else
             echo "  ⚠️  Could not download from target branch (possibly new file)"
