@@ -112,6 +112,7 @@ jobs:
       - name: 🤖 Analyze with GitHub Copilot CLI
         env:
           MODEL: ${{ env.MODEL }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           bash ./scripts/analyze-with-copilot.sh \
             "${{ env.ANALYSIS_DIR }}/source" \
