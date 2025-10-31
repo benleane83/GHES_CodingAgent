@@ -24,7 +24,7 @@ This repository implements an automated coding workflow using **GitHub Copilot C
 - 📦 **Artifact logging** - Captures and stores execution logs
 - 🔄 **MCP integration** - Uses Context7 for documentation and best practices
 
-#### 🔍 Copilot PR Reviewer (NEW!)
+#### 🔍 Copilot PR Reviewer
 - 💬 **Automatic PR reviews** - Reviews code on every PR open/update
 - 🔒 **Security analysis** - Detects security vulnerabilities
 - ⚡ **Performance checks** - Identifies performance issues
@@ -412,29 +412,6 @@ Detailed guides are available in the `docs/` directory:
 - **[Migration Guide](docs/MIGRATION-GUIDE.md)** - Migrate from Azure DevOps
 - **[Reviewer Migration Guide](docs/REVIEWER-MIGRATION.md)** - ADO Reviewer adaptation details
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-
-## 🔄 Migration from Azure DevOps
-
-If you're migrating from the Azure DevOps implementation, see the **[Migration Guide](docs/MIGRATION-GUIDE.md)** for:
-
-- Step-by-step migration instructions
-- Mapping between ADO and GHES concepts
-- Parallel operation strategies
-- Cleanup procedures
-
-### ADO Reviewer Agent Porting
-
-The **Copilot PR Reviewer** is an adaptation of the [ADO_ReviewerAgent](https://github.com/0GiS0/ADO_ReviewerAgent) project by [0GiS0](https://github.com/0GiS0), adapted for GitHub Enterprise Server.
-
-Key adaptations:
-- ✅ Azure Pipelines → GitHub Actions
-- ✅ Azure DevOps API → GitHub API
-- ✅ ADO authentication → GitHub token auth
-- ✅ Thread comments → Review comments
-
-See [REVIEWER-MIGRATION.md](docs/REVIEWER-MIGRATION.md) for detailed technical comparison.
-
-Legacy ADO documentation: [README-ADO.md](README-ADO.md)
 
 ## 🆘 Troubleshooting
 

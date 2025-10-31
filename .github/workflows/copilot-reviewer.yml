@@ -37,6 +37,11 @@ jobs:
           echo "  - Analysis Dir: ${{ env.ANALYSIS_DIR }}"
           echo "  - Diff File: ${{ env.DIFF_FILE }}"
 
+      - name: 📂 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: ⚙️ Setup Node.js 22.x
         uses: actions/setup-node@v4
         with:
