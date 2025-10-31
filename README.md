@@ -1,171 +1,379 @@
-# 🤖 Azure DevOps Coding Agent gracias a GitHub Copilot CLI
+# 🤖 GitHub Copilot Coder for GHES
+
+> **Automated code generation powered by GitHub Copilot CLI on GitHub Enterprise Server**
+
+[![GitHub Actions](https://img.shields.io/badge/GitHub-Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/features/actions)
+[![GitHub Copilot](https://img.shields.io/badge/GitHub-Copilot-000000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/features/copilot)
+[![GHES](https://img.shields.io/badge/GHES-Compatible-success?style=for-the-badge&logo=github&logoColor=white)](https://docs.github.com/en/enterprise-server)
+
+---
+
+## 📋 Overview
+
+This repository implements an automated coding workflow using **GitHub Copilot CLI** integrated with **GitHub Enterprise Server (GHES)**. Simply create an issue, add a label, and watch as Copilot generates the code, creates a PR, and links everything together automatically.
+
+### ✨ Key Features
+
+- 🏷️ **Label-driven workflow** - Trigger code generation by adding the `copilot-generate` label
+- 🤖 **AI-powered coding** - GitHub Copilot CLI generates code based on issue descriptions
+- 🌿 **Automatic branching** - Creates feature branches (`copilot/{issue-number}`)
+- 📬 **Auto PR creation** - Opens pull requests with generated code
+- 🔗 **Native linking** - Automatically links PRs to issues
+- 📊 **Progress tracking** - Updates issue labels to track workflow state
+- 📦 **Artifact logging** - Captures and stores execution logs
+- 🔄 **MCP integration** - Uses Context7 for documentation and best practices
+
+## 🚀 Quick Start
+
+### 1️⃣ Setup (One Time)
+
+1. **Configure Repository Secrets**
+   
+   Go to **Settings** → **Secrets and variables** → **Actions**:
+   
+   - `GH_TOKEN` - GitHub PAT with `repo` and `copilot_requests` scopes
+   - `CONTEXT7_API_KEY` - (Optional) Context7 API key for documentation
+
+2. **Create Required Labels**
+   
+   The workflow uses these labels (create them if they don't exist):
+   - `copilot-task` - Marks issue as suitable for Copilot
+   - `copilot-generate` - Triggers the workflow
+   - `in-progress` - Workflow is running
+   - `completed` - Workflow completed successfully
+   - `ready-for-review` - PR is ready for review
+   - `copilot-generated` - Applied to generated PRs
+
+### 2️⃣ Create an Issue
+
+Use the **🤖 Copilot Task** issue template or create a standard issue with:
+
+```markdown
+## 📋 Task Description
+Create a Python FastAPI application with a simple health check endpoint.
+
+## 🎯 Acceptance Criteria
+- [ ] FastAPI app with /health endpoint
+- [ ] Returns JSON with status and timestamp
+- [ ] Includes proper documentation
+- [ ] Add requirements.txt
+
+## 📚 Technical Details
+- Use FastAPI latest version
+- Python 3.11+
+- Follow REST API best practices
+```
+
+### 3️⃣ Trigger the Workflow
+
+Add the **`copilot-generate`** label to the issue.
+
+### 4️⃣ Watch the Magic ✨
+
+The workflow will automatically:
+
+1. 🏷️ Update issue labels → `in-progress`
+2. 🌿 Create branch → `copilot/{issue-number}`
+3. 🤖 Generate code using Copilot CLI
+4. 💾 Commit changes with co-author attribution
+5. 🚀 Push branch to repository
+6. 📬 Create Pull Request
+7. 💬 Comment on issue with PR link
+8. 🏷️ Update labels → `completed`, `ready-for-review`
+
+### 5️⃣ Review and Merge
+
+1. Review the Pull Request
+2. Test the implementation
+3. Approve and merge when ready
+
+## 🎯 How It Works
+
+### Workflow Trigger
+
+```yaml
+on:
+  issues:
+    types: [opened, labeled]
+```
+
+The workflow triggers when:
+- An issue is opened with the `copilot-generate` label
+- The `copilot-generate` label is added to an existing issue
+
+### Architecture
+
+```
+GitHub Issue Created
+       ↓
+Add 'copilot-generate' Label
+       ↓
+Workflow Triggers
+       ↓
+Update Labels (in-progress)
+       ↓
+Setup Environment
+(Python, Node.js, Copilot CLI)
+       ↓
+Configure MCP Servers
+       ↓
+Create Feature Branch
+       ↓
+Run Copilot CLI
+(Generate Code)
+       ↓
+Commit Changes
+       ↓
+Push Branch
+       ↓
+Create Pull Request
+       ↓
+Comment on Issue
+       ↓
+Update Labels (completed, ready-for-review)
+       ↓
+✅ Done!
+```
+
+## 📦 Repository Structure
+
+```
+.github/
+├── workflows/
+│   └── copilot-coder.yml        # Main GitHub Actions workflow
+├── ISSUE_TEMPLATE/
+│   └── copilot-task.md          # Issue template for Copilot tasks
+└── copilot-instructions.md      # Instructions for Copilot CLI
+
+scripts/
+├── prepare-commit.sh            # Prepare commit with co-author
+├── push-branch.sh               # Push branch to remote
+├── update-issue-labels.sh       # Update GitHub issue labels
+└── post-workflow-comment.sh     # Post completion comment
+
+docs/
+├── GHES-SETUP.md               # Detailed setup guide
+├── MIGRATION-GUIDE.md          # Migration from ADO guide
+└── TROUBLESHOOTING.md          # Common issues and solutions
+
+mcp-config.json                 # MCP servers configuration
+```
+
+## 🛠️ Technologies Used
+
+- **GitHub Actions** - Workflow orchestration
+- **GitHub Copilot CLI** - AI-powered code generation
+- **GitHub Issues** - Task management
+- **Bash Scripts** - Automation
+- **Node.js 22.x** - Runtime for Copilot CLI
+- **Python 3.x** - Tooling support
+- **MCP Servers** - Context providers:
+  - **Context7** - Documentation and examples
+  - **Fetch** - Web content retrieval
+  - **Time** - Time-based operations
+
+## ⚙️ Configuration
+
+### Workflow Variables
+
+Edit `.github/workflows/copilot-coder.yml` to customize:
+
+```yaml
+env:
+  MODEL: claude-haiku-4.5          # LLM model to use
+  COPILOT_VERSION: 0.0.352         # Copilot CLI version
+```
+
+### MCP Servers
+
+Edit `mcp-config.json` to add or remove MCP servers:
+
+```json
+{
+  "mcpServers": {
+    "context7": {
+      "type": "local",
+      "command": "npx",
+      "tools": ["*"],
+      "args": ["-y", "@upstash/context7-mcp"]
+    }
+  }
+}
+```
+
+### Copilot Instructions
+
+Edit `.github/copilot-instructions.md` to customize Copilot's behavior:
+
+- Add project-specific guidelines
+- Define code style preferences
+- Specify frameworks or libraries to use
+- Add security or compliance requirements
+
+## 📊 Workflow Execution
+
+### Typical Execution Time
+
+- ⏱️ **Setup** (1-2 minutes): Install dependencies (cached after first run)
+- 🤖 **Code Generation** (2-5 minutes): Copilot generates code
+- 📬 **PR Creation** (<1 minute): Create and link PR
+
+**Total**: ~3-8 minutes depending on task complexity
+
+### Logs and Artifacts
+
+Each workflow run publishes:
+
+- 📝 **Workflow logs** - Available in Actions tab
+- 📦 **Copilot logs** - Downloaded as artifacts (retention: 30 days)
+
+Access artifacts:
+1. Go to Actions tab
+2. Select workflow run
+3. Scroll to Artifacts section
+4. Download `copilot-logs`
+
+## 🎯 Use Cases
+
+### ✅ Perfect For
+
+- Creating new features from scratch
+- Implementing API endpoints
+- Writing utility functions
+- Setting up new projects
+- Creating boilerplate code
+- Implementing well-defined algorithms
+- Converting specifications to code
+
+### ⚠️ Consider Manual Review For
+
+- Complex architectural changes
+- Security-critical code
+- Performance-sensitive code
+- Legacy code refactoring
+- Cross-cutting concerns
+
+## 🔒 Security
+
+### Token Security
+
+- ✅ **Never commit tokens** to repository
+- ✅ Use **GitHub Secrets** for all sensitive data
+- ✅ Rotate tokens regularly
+- ✅ Use minimum required permissions
+
+### Workflow Permissions
+
+```yaml
+permissions:
+  contents: write        # Create branches and commits
+  issues: write          # Update issue labels and comments
+  pull-requests: write   # Create pull requests
+```
+
+### Code Review
+
+- 🔍 **Always review** generated code before merging
+- 🧪 **Test thoroughly** in development environment
+- 🛡️ **Run security scans** on generated code
+- 📖 **Verify documentation** is accurate
+
+## 📚 Documentation
+
+Detailed guides are available in the `docs/` directory:
+
+- **[GHES Setup Guide](docs/GHES-SETUP.md)** - Complete setup instructions
+- **[Migration Guide](docs/MIGRATION-GUIDE.md)** - Migrate from Azure DevOps
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+
+## 🔄 Migration from Azure DevOps
+
+If you're migrating from the Azure DevOps implementation, see the **[Migration Guide](docs/MIGRATION-GUIDE.md)** for:
+
+- Step-by-step migration instructions
+- Mapping between ADO and GHES concepts
+- Parallel operation strategies
+- Cleanup procedures
+
+Legacy ADO documentation: [README-ADO.md](README-ADO.md)
+
+## 🆘 Troubleshooting
+
+### Workflow Not Triggering
+
+- ✅ Verify label is exactly `copilot-generate` (case-sensitive)
+- ✅ Check workflow file syntax
+- ✅ Ensure workflow is enabled in Actions tab
+
+### Authentication Errors
+
+- ✅ Verify `GH_TOKEN` is set in repository secrets
+- ✅ Check token scopes (`repo`, `copilot_requests`)
+- ✅ Ensure token is from GHES, not GitHub.com
+
+### Copilot Errors
+
+- ✅ Check issue description is clear and detailed
+- ✅ Verify `MODEL` setting in workflow
+- ✅ Review Copilot logs in artifacts
+
+For more troubleshooting help, see **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)**.
+
+## 📈 Monitoring
+
+### Workflow Success Rate
+
+Monitor workflow runs in the Actions tab:
+
+```bash
+# List recent workflow runs
+gh run list --workflow=copilot-coder.yml --limit 10
+
+# View specific run
+gh run view <run-id> --log
+```
+
+### Performance Metrics
+
+Track these metrics for your workflow:
+
+- ⏱️ Average execution time
+- ✅ Success rate
+- 📊 Cache hit rate
+- 🔄 Retry rate
+
+## 🤝 Contributing
+
+Contributions are welcome! To contribute:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+This project is provided as-is for educational and reference purposes.
+
+## 🙏 Acknowledgments
+
+- **GitHub Copilot team** - For the amazing Copilot CLI
+- **MCP community** - For the Model Context Protocol
+- **Context7** - For documentation services
+- **Original ADO implementation** - By [0GiS0](https://github.com/0GiS0)
+
+## 📞 Support
+
+- 📖 **Documentation**: Check `docs/` directory
+- 🐛 **Issues**: Create an issue in this repository
+- 💬 **Discussions**: Use GitHub Discussions
+- 📧 **Contact**: See repository maintainers
+
+---
 
 <div align="center">
 
-[![YouTube Channel Subscribers](https://img.shields.io/youtube/channel/subscribers/UC140iBrEZbOtvxWsJ-Tb0lQ?style=for-the-badge&logo=youtube&logoColor=white&color=red)](https://www.youtube.com/c/GiselaTorres?sub_confirmation=1)
-[![GitHub followers](https://img.shields.io/github/followers/0GiS0?style=for-the-badge&logo=github&logoColor=white)](https://github.com/0GiS0)
-[![LinkedIn Follow](https://img.shields.io/badge/LinkedIn-Sígueme-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/giselatorresbuitrago/)
-[![X Follow](https://img.shields.io/badge/X-Sígueme-black?style=for-the-badge&logo=x&logoColor=white)](https://twitter.com/0GiS0)
-
-**📖 Idiomas:** 🇪🇸 **Español** | [🇬🇧 English](README.en.md)
+**Made with ❤️ and 🤖 by GitHub Copilot**
 
 </div>
-
-¡Hola developer 👋🏻! Este repositorio implementa un flujo en Azure Pipelines 🚀 que integra **GitHub Copilot CLI** 🤖 para generar código automáticamente a partir de Work Items 📋. El código del mismo fue utilizado para mi vídeo: 🚀 Lleva Azure DevOps al siguiente nivel con GitHub Copilot CLI 🤖
-
-
-<a href="https://youtu.be/ZS0LQA2_zZQ">
- <img src="https://img.youtube.com/vi/ZS0LQA2_zZQ/maxresdefault.jpg" alt="🚀 Lleva Azure DevOps al siguiente nivel con GitHub Copilot CLI 🤖" width="100%" />
-</a>
-
-### 🎯 Objetivos
-
-- ✅ Automatizar la creación de código mediante IA (GitHub Copilot)
-- ✅ Integrar GitHub Copilot CLI con Azure DevOps
-- ✅ Gestionar flujos de trabajo automáticos desde WebHooks
-- ✅ Crear ramas de características, commits y Pull Requests de forma automática
-- ✅ Vincular cambios con elementos de trabajo de Azure DevOps
-
-## 🚀 ¿Qué hace?
-
-El pipeline se activa mediante un **WebHook desde Azure DevOps** y realiza el siguiente flujo:
-
-1. 📖 **Lee el elemento de trabajo** - Obtiene la descripción y requisitos
-2. 🌿 **Crea una rama de características** - `copilot/<work-item-id>`
-3. 🤖 **Ejecuta GitHub Copilot CLI** - Genera el código automáticamente
-4. 💾 **Realiza un commit** - Guarda los cambios con mensajes descriptivos
-5. 🚀 **Hace push de la rama** - Sube los cambios al repositorio
-6. 📬 **Crea un Pull Request** - Abre la PR automáticamente
-7. 🔗 **Vincula todo en Azure DevOps** - Conecta la rama, commit y PR con el work item
-
-## 🛠️ Tecnologías Utilizadas
-
-- **Azure DevOps** - Gestión de work items y pipelines
-- **GitHub Copilot CLI** - Generación automática de código con IA
-- **Bash Scripts** - Automatización y orquestación
-- **Node.js 22.x** - Runtime para Copilot CLI
-- **Python 3.x** - Herramientas auxiliares
-- **MCP Servers** - Context7 para documentación actualizada
-
-## 📦 Estructura del Proyecto
-
-```
-├── azure-pipelines.yml          # Definición del pipeline
-├── mcp-config.json              # Configuración de MCP Servers
-├── .github/
-│   └── copilot-instructions.md  # Instrucciones para Copilot
-└── scripts/                     # Scripts de automatización
-    ├── clone-target-repo.sh
-    ├── create-pr-and-link.sh
-    ├── push-branch.sh
-    └── ...
-```
-
-## ⚙️ Configuración Requerida
-
-### Variables de Entorno
-
-- `GH_TOKEN` - Token de GitHub con el permiso Copilot Requests
-- `AZURE_DEVOPS_PAT` - Personal Access Token de Azure DevOps del usuario que simula GitHub Copilot CLI
-- `CONTEXT7_API_KEY` - API key para Context7 (documentación)
-- `COPILOT_VERSION` - Versión de Copilot CLI a instalar, para evitar que deje de funcionar el flujo si algo importante ha cambiado
-- `MODEL` - Modelo de lenguaje a utilizar (ej. claude-sonnet-4)
-
-### WebHook de Azure DevOps
-
-El pipeline se activa mediante un WebHook configurado en Azure DevOps que dispara cuando se crean o actualizan elementos de trabajo.
-
-Si quieres ver cómo se configura el mismo puedes echar un vistazo a mi artículo [Cómo ejecutar un flujo de Azure Pipelines 🚀 cuando se crea un work item](https://www.returngis.net/2025/10/como-ejecutar-un-flujo-de-azure-pipelines-%f0%9f%9a%80-cuando-se-crea-un-work-item/)
-
-## 📝 Cómo Funciona el Pipeline - Paso a Paso
-
-El pipeline ejecuta los siguientes pasos de forma automática:
-
-### 🔧 Preparación del Entorno
-1. **🚀 Iniciar Pipeline** - Inicia el flujo de trabajo
-2. **🐍 Setup Python** - Instala Python 3.x
-3. **📦 Instalar uv/uvx** - Gestor de paquetes rápido
-4. **⚙️ Setup Node.js 22.x** - Instala Node.js para Copilot CLI
-5. **🔍 Detectar Ruta NPM** - Localiza la ruta global de NPM
-6. **📦 Cache de Paquetes NPM** - Cachea paquetes globales para acelerar ejecuciones futuras
-7. **📦 Instalar Copilot CLI** - Instala @github/copilot en la versión especificada
-
-### 📋 Procesamiento del Work Item
-8. **📋 Parsear Datos del Webhook** - Extrae información del evento (ID, título, descripción, etc.)
-9. **🛎️ Clonar Repositorio** - Clona el repositorio destino donde se generará el código
-10. **📖 Leer Detalles del Work Item** - Obtiene toda la información del work item desde Azure DevOps
-11. **🚀 Inicializar Work Item** - Cambia el estado a "Development" y prepara el work item
-
-### 🔐 Configuración de Seguridad y Herramientas
-12. **⚙️ Configurar MCP Servers** - Copia la configuración de MCP (Context7, etc.) a ~/.config/
-13. **🧰 Verificar Acceso a MCP** - Comprueba que todos los MCP servers están disponibles
-
-### 💻 Generación de Código
-14. **🌿 Crear Rama de Características** - Crea `copilot/<work-item-id>`
-15. **🤖 Ejecutar GitHub Copilot CLI** - Genera el código basado en la descripción del work item
-    - Copia las instrucciones de Copilot al repositorio
-    - Ejecuta Copilot con el modelo especificado (ej: claude-sonnet-4)
-    - Registra todos los logs detallados
-
-### 📤 Commit y Publicación
-16. **💾 Preparar y Realizar Commit** - Crea un commit con el código generado
-    - Genera `copilot-summary.md` (descripción de cambios)
-    - Genera `commit-message.md` (mensaje de commit)
-17. **🚀 Push de la Rama** - Sube la rama al repositorio remoto
-
-### 🔗 Integración y Vinculación
-18. **� Vincular Rama al Work Item** - Vincula la rama de características con el work item
-19. **🔧 Actualizar Actividad del Work Item** - Marca la actividad como "Development"
-20. **📬 Crear PR y Vincularla** - Crea un Pull Request y la vincula al work item
-
-### 🎉 Finalización
-21. **💬 Añadir Comentario de Finalización** - Comenta en el work item con el enlace a la PR
-22. **📦 Publicar Logs** - Guarda todos los logs del pipeline como artefactos
-
-## 🔄 Flujo de Trabajo Completo
-
-```
-Work Item Created/Updated
-         ↓
-    Setup Entorno
-    (Python, Node.js, NPM)
-         ↓
-  Cache de Paquetes NPM
-         ↓
-Instalar Copilot CLI
-         ↓
- Parsear Datos Webhook
-         ↓
-Clone Repositorio
-         ↓
-Leer Detalles del Work Item
-         ↓
-Inicializar Work Item
-         ↓
-Configurar MCP Servers
-         ↓
-Verificar Acceso MCP
-         ↓
-Create Branch (copilot/xxx)
-         ↓
-  Run GitHub Copilot
-    (Genera código IA)
-         ↓
-   Commit Changes
-         ↓
-   Push to Remote
-         ↓
-  Link Branch to WI
-         ↓
-Update Activity (Development)
-         ↓
-  Create Pull Request
-         ↓
- Link PR to Work Item
-         ↓
-Add Completion Comment
-         ↓
-  Publish Logs
-         ↓
-✅ Workflow Complete
-```
