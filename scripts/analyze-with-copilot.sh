@@ -122,7 +122,16 @@ Focus only on this single file. Be thorough but concise."
 cd "$PR_DIRECTORY"
 
 echo "🤖 Generating analysis with Copilot..."
-copilot -p "$ANALYSIS_PROMPT" --allow-all-tools --model "$MODEL" 2>&1
+echo "🔐 Token status: GH_TOKEN is $([ -n "$GH_TOKEN" ] && echo "set" || echo "NOT set")"
+
+# Try using gh CLI to login first to ensure proper authentication
+if command -v gh &> /dev/null; then
+    echo "🔑 Authenticating with GitHub CLI..."
+    echo "$GH_TOKEN" | gh auth login --with-token 2>/dev/null || true
+fi
+
+# Execute copilot with explicit token in environment
+GH_TOKEN="$GH_TOKEN" copilot -p "$ANALYSIS_PROMPT" --allow-all-tools --model "$MODEL" 2>&1
 
 COPILOT_EXIT=$?
 
