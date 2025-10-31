@@ -2,7 +2,7 @@ name: 🤖 GitHub Copilot Coder
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [labeled]
 
 jobs:
   copilot-cli:
