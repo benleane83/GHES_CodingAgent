@@ -14,6 +14,7 @@ This repository implements an automated coding workflow using **GitHub Copilot C
 
 ### ✨ Key Features
 
+#### 🤖 Copilot Coder
 - 🏷️ **Label-driven workflow** - Trigger code generation by adding the `copilot` label
 - 🤖 **AI-powered coding** - GitHub Copilot CLI generates code based on issue descriptions
 - 🌿 **Automatic branching** - Creates feature branches (`copilot/{issue-number}`)
@@ -22,6 +23,14 @@ This repository implements an automated coding workflow using **GitHub Copilot C
 - 📊 **Progress tracking** - Updates issue labels to track workflow state
 - 📦 **Artifact logging** - Captures and stores execution logs
 - 🔄 **MCP integration** - Uses Context7 for documentation and best practices
+
+#### 🔍 Copilot PR Reviewer (NEW!)
+- 💬 **Automatic PR reviews** - Reviews code on every PR open/update
+- 🔒 **Security analysis** - Detects security vulnerabilities
+- ⚡ **Performance checks** - Identifies performance issues
+- 🧹 **Code quality** - Flags code quality concerns
+- 📝 **Detailed feedback** - Posts actionable comments with examples
+- 📊 **Artifact logs** - Complete analysis available for reference
 
 ## 🚀 Quick Start
 
@@ -91,12 +100,49 @@ The workflow will automatically:
 ### 5️⃣ Review and Merge
 
 1. Review the Pull Request
-2. Test the implementation
-3. Approve and merge when ready
+2. **Copilot Reviewer automatically analyzes the code** ✨
+3. Test the implementation
+4. Approve and merge when ready
 
-## 🎯 How It Works
+## 🤖 Copilot PR Reviewer (Automatic)
 
-### Workflow Trigger
+The **Copilot PR Reviewer** automatically analyzes every pull request:
+
+- 🔄 **Triggers on every PR** - Open or update
+- 🔍 **Analyzes all changed files** - Security, performance, code quality
+- 💬 **Posts review comments** - With actionable recommendations
+- 📊 **Generates analysis report** - Available as artifact
+
+### Review Process
+
+```
+PR Opened/Updated
+         ↓
+Reviewer Workflow Triggers (Automatic)
+         ↓
+1️⃣ Download Changed Files
+2️⃣ Run Copilot Analysis
+3️⃣ Post Review Comments
+         ↓
+� Feedback Ready for Developer
+```
+
+### Example Review Output
+
+Copilot identifies and comments on issues like:
+
+- 🔒 **Security**: SQL injection, exposed secrets, unsafe deserialization
+- ⚡ **Performance**: Inefficient loops, unnecessary allocations, N+1 queries
+- 🧹 **Code Quality**: Naming, documentation, complexity, error handling
+- 📝 **Best Practices**: Type safety, error handling, edge cases
+
+**No action required!** The reviewer workflow runs automatically on every PR. Just merge your code after addressing the findings.
+
+For detailed information, see [Copilot PR Reviewer Documentation](docs/COPILOT-REVIEWER.md).
+
+## �🎯 How It Works
+
+### Coder Workflow Trigger
 
 ```yaml
 on:
@@ -104,9 +150,21 @@ on:
     types: [opened, labeled]
 ```
 
-The workflow triggers when:
+The coder workflow triggers when:
 - An issue is opened with the `copilot` label
 - The `copilot` label is added to an existing issue
+
+### Reviewer Workflow Trigger
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize]
+```
+
+The reviewer workflow triggers when:
+- A pull request is opened
+- A pull request is updated (new commits)
 
 ### Architecture
 
@@ -147,21 +205,28 @@ Update Labels (completed, ready-for-review)
 ```
 .github/
 ├── workflows/
-│   └── copilot-coder.yml        # Main GitHub Actions workflow
-└── copilot-instructions.md      # Instructions for Copilot CLI
+│   ├── copilot-coder.yml         # Code generation workflow
+│   └── copilot-reviewer.yml      # PR review workflow (NEW!)
+└── copilot-instructions.md       # Instructions for Copilot CLI
 
 scripts/
-├── prepare-commit.sh            # Prepare commit with co-author
-├── push-branch.sh               # Push branch to remote
-├── post-workflow-comment.sh     # Post completion comment
-└── post-workflow-comment.sh     # Post completion comment
+├── prepare-commit.sh             # Prepare commit with co-author
+├── push-branch.sh                # Push branch to remote
+├── post-workflow-comment.sh      # Post completion comment
+├── get-pr-diff.sh                # Get PR file changes (reviewer)
+├── download-pr-files.sh          # Download changed files (reviewer)
+├── analyze-with-copilot.sh       # Run AI analysis (reviewer)
+└── post-pr-comment.sh            # Post review comments (reviewer)
 
 docs/
-├── GHES-SETUP.md               # Detailed setup guide
-├── MIGRATION-GUIDE.md          # Migration from ADO guide
-└── TROUBLESHOOTING.md          # Common issues and solutions
+├── GHES-SETUP.md                # Detailed setup guide
+├── GHES-COMPATIBILITY.md        # GHES compatibility info
+├── COPILOT-REVIEWER.md          # PR Reviewer documentation (NEW!)
+├── REVIEWER-MIGRATION.md        # ADO to GHES adaptation guide (NEW!)
+├── MIGRATION-GUIDE.md           # Migration from ADO guide
+└── TROUBLESHOOTING.md           # Common issues and solutions
 
-mcp-config.json                 # MCP servers configuration
+mcp-config.json                  # MCP servers configuration
 ```
 
 ## 🛠️ Technologies Used
@@ -340,8 +405,12 @@ permissions:
 
 Detailed guides are available in the `docs/` directory:
 
+Detailed guides are available in the `docs/` directory:
+
 - **[GHES Setup Guide](docs/GHES-SETUP.md)** - Complete setup instructions
+- **[Copilot PR Reviewer Guide](docs/COPILOT-REVIEWER.md)** - Automated PR review
 - **[Migration Guide](docs/MIGRATION-GUIDE.md)** - Migrate from Azure DevOps
+- **[Reviewer Migration Guide](docs/REVIEWER-MIGRATION.md)** - ADO Reviewer adaptation details
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ## 🔄 Migration from Azure DevOps
@@ -352,6 +421,18 @@ If you're migrating from the Azure DevOps implementation, see the **[Migration G
 - Mapping between ADO and GHES concepts
 - Parallel operation strategies
 - Cleanup procedures
+
+### ADO Reviewer Agent Porting
+
+The **Copilot PR Reviewer** is an adaptation of the [ADO_ReviewerAgent](https://github.com/0GiS0/ADO_ReviewerAgent) project by [0GiS0](https://github.com/0GiS0), adapted for GitHub Enterprise Server.
+
+Key adaptations:
+- ✅ Azure Pipelines → GitHub Actions
+- ✅ Azure DevOps API → GitHub API
+- ✅ ADO authentication → GitHub token auth
+- ✅ Thread comments → Review comments
+
+See [REVIEWER-MIGRATION.md](docs/REVIEWER-MIGRATION.md) for detailed technical comparison.
 
 Legacy ADO documentation: [README-ADO.md](README-ADO.md)
 

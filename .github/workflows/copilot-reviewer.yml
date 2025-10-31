@@ -1,0 +1,169 @@
+name: 🤖 Copilot PR Reviewer
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+      - develop
+      - feature/*
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  MODEL: claude-haiku-4.5
+  COPILOT_VERSION: latest
+  ANALYSIS_DIR: ${{ github.workspace }}/pr-analysis
+  DIFF_FILE: ${{ github.workspace }}/pr-diff.json
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    name: 🤖 Analyze PR and Generate Review
+    
+    steps:
+      - name: 📋 Show PR Information
+        run: |
+          echo "📋 Pull Request Information:"
+          echo "  - Repository: ${{ github.repository }}"
+          echo "  - PR #: ${{ github.event.pull_request.number }}"
+          echo "  - Source Branch: ${{ github.event.pull_request.head.ref }}"
+          echo "  - Target Branch: ${{ github.event.pull_request.base.ref }}"
+          echo "  - Source Commit: ${{ github.event.pull_request.head.sha }}"
+          echo ""
+          echo "📁 Working directories:"
+          echo "  - Analysis Dir: ${{ env.ANALYSIS_DIR }}"
+          echo "  - Diff File: ${{ env.DIFF_FILE }}"
+
+      - name: ⚙️ Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: 🔍 Detect NPM Global Path
+        run: |
+          NPM_PREFIX=$(npm config get prefix)
+          echo "NPM_GLOBAL_PATH=${NPM_PREFIX}/lib/node_modules" >> $GITHUB_ENV
+          echo "NPM global path: ${NPM_PREFIX}/lib/node_modules"
+
+      - name: 📦 Cache Global NPM Packages
+        uses: actions/cache@v4
+        with:
+          key: npm-global-${{ runner.os }}-copilot-${{ env.COPILOT_VERSION }}
+          path: ${{ env.NPM_GLOBAL_PATH }}
+          restore-keys: |
+            npm-global-${{ runner.os }}-copilot-
+
+      - name: 📦 Install Copilot CLI
+        run: |
+          if ! command -v copilot &> /dev/null; then
+            echo "Installing @github/copilot@${{ env.COPILOT_VERSION }}..."
+            npm install -g @github/copilot@${{ env.COPILOT_VERSION }}
+          else
+            echo "✅ @github/copilot already installed (from cache)"
+            copilot --version
+          fi
+
+      - name: 🔍 Get PR Differences
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GHES_HOST: ${{ github.server_url }}
+        run: |
+          # Extract host from server_url (remove https://)
+          GHES_HOST="${{ github.server_url }}" | sed 's|https://||'
+          
+          bash ./scripts/get-pr-diff.sh \
+            "$GHES_HOST" \
+            "${{ github.repository_owner }}" \
+            "${{ github.event.repository.name }}" \
+            "${{ github.event.pull_request.number }}" \
+            "${{ github.token }}" \
+            "${{ env.DIFF_FILE }}"
+
+      - name: 📁 Download Modified Files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GHES_HOST: ${{ github.server_url }}
+        run: |
+          GHES_HOST="${{ github.server_url }}" | sed 's|https://||'
+          
+          bash ./scripts/download-pr-files.sh \
+            "$GHES_HOST" \
+            "${{ github.repository_owner }}" \
+            "${{ github.event.repository.name }}" \
+            "${{ github.event.pull_request.number }}" \
+            "${{ github.token }}" \
+            "${{ env.ANALYSIS_DIR }}"
+
+      - name: 🤖 Analyze with GitHub Copilot CLI
+        env:
+          MODEL: ${{ env.MODEL }}
+        run: |
+          bash ./scripts/analyze-with-copilot.sh \
+            "${{ env.ANALYSIS_DIR }}/source" \
+            "${{ env.ANALYSIS_DIR }}/source/pr-comments"
+
+      - name: 💬 Publish Comment on PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GHES_HOST: ${{ github.server_url }}
+        if: always()
+        run: |
+          GHES_HOST="${{ github.server_url }}" | sed 's|https://||'
+          
+          bash ./scripts/post-pr-comment.sh \
+            "$GHES_HOST" \
+            "${{ github.repository_owner }}" \
+            "${{ github.event.repository.name }}" \
+            "${{ github.event.pull_request.number }}" \
+            "${{ env.ANALYSIS_DIR }}/source/pr-comments" \
+            "${{ github.token }}" || true
+
+      - name: 📦 Upload Analysis Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-analysis-${{ github.event.pull_request.number }}
+          path: ${{ env.ANALYSIS_DIR }}/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: 📊 Summary
+        if: always()
+        run: |
+          echo "## 📊 PR Review Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- PR #: ${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Author: ${{ github.event.pull_request.user.login }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -d "${{ env.ANALYSIS_DIR }}/source/pr-comments" ]; then
+            COMMENT_COUNT=$(find "${{ env.ANALYSIS_DIR }}/source/pr-comments" -name "*_analysis.md" 2>/dev/null | wc -l)
+            echo "**Review Results:**" >> $GITHUB_STEP_SUMMARY
+            echo "- Comments Generated: $COMMENT_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "- Model Used: ${{ env.MODEL }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if [ $COMMENT_COUNT -gt 0 ]; then
+              echo "**Issues Found:**" >> $GITHUB_STEP_SUMMARY
+              find "${{ env.ANALYSIS_DIR }}/source/pr-comments" -name "*_analysis.md" | sort | while read file; do
+                echo "- $(basename "$file" _analysis.md)" >> $GITHUB_STEP_SUMMARY
+              done
+            else
+              echo "✅ No issues found!" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "**Review Results:**" >> $GITHUB_STEP_SUMMARY
+            echo "- Comments Generated: 0" >> $GITHUB_STEP_SUMMARY
+            echo "- Model Used: ${{ env.MODEL }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Status: ✅ No issues found!" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifacts:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Full analysis available in [pr-analysis artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)" >> $GITHUB_STEP_SUMMARY
