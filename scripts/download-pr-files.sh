@@ -160,8 +160,8 @@ while IFS= read -r filepath; do
             -H "Accept: application/vnd.github.v3+json" \
             "$PR_URL" 2>/dev/null)
         
-        HEAD_SHA=$(echo "$PR_DATA" | grep -o '"sha":"[^"]*"' | head -1 | cut -d'"' -f4)
-        BASE_SHA=$(echo "$PR_DATA" | grep -o '"base":{[^}]*"sha":"[^"]*"' | grep -o '"sha":"[^"]*"' | cut -d'"' -f4)
+        HEAD_SHA=$(echo "$PR_DATA" | jq -r '.head.sha' 2>/dev/null || echo "")
+        BASE_SHA=$(echo "$PR_DATA" | jq -r '.base.sha' 2>/dev/null || echo "")
         
         # Download from source (head) branch
         if download_file "$filepath" "$HEAD_SHA" "source" "source branch"; then
@@ -193,8 +193,8 @@ PR_DATA=$(curl -s \
     -H "Accept: application/vnd.github.v3+json" \
     "$PR_URL" 2>/dev/null)
 
-BASE_REF=$(echo "$PR_DATA" | grep -o '"base":{"label":"[^"]*"' | cut -d'"' -f8 | cut -d: -f2-)
-HEAD_REF=$(echo "$PR_DATA" | grep -o '"head":{"label":"[^"]*"' | cut -d'"' -f8 | cut -d: -f2-)
+BASE_REF=$(echo "$PR_DATA" | jq -r '.base.ref' 2>/dev/null || echo "unknown")
+HEAD_REF=$(echo "$PR_DATA" | jq -r '.head.ref' 2>/dev/null || echo "unknown")
 
 cat > "$METADATA_FILE" << EOF
 {
