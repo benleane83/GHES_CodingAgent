@@ -319,7 +319,7 @@ git config --global https.proxy https://proxy.company.com:8080
 - [ ] **Create test issue with copilot label**
   - Navigate to repository on GHES
   - Create new issue
-  - Add `copilot-generate` label
+  - Add `copilot` label
   - Monitor workflow execution
 
 - [ ] **Verify each workflow step**

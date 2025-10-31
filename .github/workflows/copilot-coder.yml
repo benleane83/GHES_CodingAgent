@@ -5,7 +5,7 @@ on:
     types: [opened, labeled]
 
 jobs:
-  copilot-generate:
+  copilot-cli:
     # Only run when the issue has the 'copilot' label
     if: contains(github.event.issue.labels.*.name, 'copilot')
     runs-on: ubuntu-latest
