@@ -8,6 +8,10 @@ on:
       - develop
       - feature/*
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -22,6 +26,9 @@ jobs:
   review:
     runs-on: ubuntu-latest
     name: 🤖 Analyze PR and Generate Review
+    if: |
+      github.event.action != 'labeled' || 
+      contains(github.event.pull_request.labels.*.name, 'copilot')
     
     steps:
       - name: 📋 Show PR Information
