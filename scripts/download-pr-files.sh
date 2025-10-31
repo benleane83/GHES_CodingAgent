@@ -3,7 +3,7 @@
 # Download PR files from GHES using GitHub API
 # Usage: ./download-pr-files.sh <GHES_HOST> <OWNER> <REPO> <PR_NUMBER> <TOKEN> <OUTPUT_DIR>
 
-set -eo pipefail
+set -o pipefail
 
 echo "📁 Downloading Modified PR Files from GHES"
 echo "=========================================="
@@ -167,8 +167,13 @@ while IFS= read -r filepath; do
             -H "Accept: application/vnd.github.v3+json" \
             "$PR_URL" 2>/dev/null)
         
-        HEAD_SHA=$(echo "$PR_DATA" | jq -r '.head.sha' 2>/dev/null || echo "")
-        BASE_SHA=$(echo "$PR_DATA" | jq -r '.base.sha' 2>/dev/null || echo "")
+        HEAD_SHA=$(echo "$PR_DATA" | jq -r '.head.sha // empty' 2>/dev/null || true)
+        BASE_SHA=$(echo "$PR_DATA" | jq -r '.base.sha // empty' 2>/dev/null || true)
+        
+        if [ -z "$HEAD_SHA" ]; then
+            echo "  ⚠️  Could not extract HEAD SHA, skipping..."
+            continue
+        fi
         
         # Download from source (head) branch
         if download_file "$filepath" "$HEAD_SHA" "source" "source branch"; then
@@ -178,10 +183,12 @@ while IFS= read -r filepath; do
         fi
         
         # Download from target (base) branch if it exists
-        if download_file "$filepath" "$BASE_SHA" "target" "target branch" || true; then
-            ((SUCCESSFUL_DOWNLOADS++))
-        else
-            echo "  ⚠️  Could not download from target branch (possibly new file)"
+        if [ -n "$BASE_SHA" ]; then
+            if download_file "$filepath" "$BASE_SHA" "target" "target branch" || true; then
+                ((SUCCESSFUL_DOWNLOADS++))
+            else
+                echo "  ⚠️  Could not download from target branch (possibly new file)"
+            fi
         fi
     fi
 done < "/tmp/pr_files_$$.txt"
