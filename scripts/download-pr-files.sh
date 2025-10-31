@@ -70,13 +70,20 @@ while [ $PAGE -le 10 ]; do
         -H "Accept: application/vnd.github.v3+json" \
         "$FILES_URL?page=$PAGE&per_page=100" 2>/dev/null)
     
+    # Check for error response
+    if echo "$RESPONSE" | grep -q "\"message\""; then
+        ERROR_MSG=$(echo "$RESPONSE" | jq -r '.message' 2>/dev/null || echo "Unknown error")
+        echo "❌ ERROR: Failed to fetch PR files: $ERROR_MSG"
+        exit 1
+    fi
+    
     # Check if empty response
     if echo "$RESPONSE" | grep -q "^\\[\\]"; then
         break
     fi
     
     # Count files on this page
-    PAGE_COUNT=$(echo "$RESPONSE" | grep -o '"filename":' | wc -l)
+    PAGE_COUNT=$(echo "$RESPONSE" | jq -r '.[] | .filename' 2>/dev/null | grep -c . || true)
     
     if [ $PAGE_COUNT -eq 0 ]; then
         break
@@ -85,7 +92,7 @@ while [ $PAGE -le 10 ]; do
     FILE_COUNT=$((FILE_COUNT + PAGE_COUNT))
     
     # Extract filenames
-    echo "$RESPONSE" | jq -r '.[] | .filename' >> "/tmp/pr_files_$$.txt" 2>/dev/null || true
+    echo "$RESPONSE" | jq -r '.[] | .filename' 2>/dev/null >> "/tmp/pr_files_$$.txt" || true
     
     PAGE=$((PAGE + 1))
 done
