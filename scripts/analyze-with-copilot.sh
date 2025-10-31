@@ -6,6 +6,19 @@
 echo "🤖 PR Analysis with GitHub Copilot CLI"
 echo "======================================="
 
+# Ensure GH_TOKEN is exported for Copilot CLI
+if [ -z "$GH_TOKEN" ]; then
+    echo "⚠️  Warning: GH_TOKEN environment variable not set"
+    if [ -z "$GITHUB_TOKEN" ]; then
+        echo "❌ ERROR: No authentication token found (GH_TOKEN or GITHUB_TOKEN)"
+        exit 1
+    else
+        export GH_TOKEN="$GITHUB_TOKEN"
+    fi
+else
+    export GH_TOKEN
+fi
+
 # Parameters
 PR_DIRECTORY="$1"
 OUTPUT_COMMENTS_DIR="${2:-$PR_DIRECTORY/pr-comments}"
