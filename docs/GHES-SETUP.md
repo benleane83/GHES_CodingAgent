@@ -23,14 +23,20 @@ Navigate to your repository **Settings** → **Secrets and variables** → **Act
 
 1. **`GH_TOKEN`** (Required)
    - **Description**: GitHub Personal Access Token with repository and Copilot access
-   - **Scopes Required**:
-     - `repo` (Full control of private repositories)
-     - `copilot_requests` (Access to GitHub Copilot)
+   - **Type**: Fine-grained Personal Access Token (recommended) or Classic PAT
+   - **Fine-Grained PAT Permissions Required**:
+     - **Repository Permissions**:
+       - `contents: read & write` - For creating and pushing branches with code changes
+       - `issues: read & write` - For updating issue labels and adding completion comments
+       - `pull_requests: read & write` - For creating pull requests and managing them
+     - **Account Permissions**:
+       - None specifically required
+   - **Classic PAT Alternative**: Use `repo` scope for full repository access
    - **How to create**:
      1. Go to your GHES instance → Settings → Developer settings → Personal access tokens
-     2. Generate new token (classic)
-     3. Select the required scopes
-     4. Copy the token and add it as a secret
+     2. Select "Fine-grained tokens" (recommended) or "Tokens (classic)"
+     3. Configure permissions as listed above
+     4. Copy the token and add it as a repository secret
 
 2. **`CONTEXT7_API_KEY`** (Optional)
    - **Description**: API key for Context7 MCP server (for documentation access)
@@ -106,14 +112,14 @@ Edit `mcp-config.json` to add or remove MCP servers:
 To trigger code generation:
 
 1. Open the issue you want to implement
-2. Add the label **`copilot-generate`**
+2. Add the label **`copilot`**
 3. The workflow will automatically start
 
 ### Workflow States
 
 The workflow manages issue states using labels:
 
-- **`copilot-generate`**: User adds to trigger workflow (automatically removed when workflow starts)
+- **`copilot`**: User adds to trigger workflow (automatically removed when workflow starts)
 - **`in-progress`**: Workflow adds when code generation starts
 - **`completed`**: Workflow adds when code generation finishes
 - **`ready-for-review`**: Workflow adds when PR is created
@@ -180,7 +186,7 @@ Create a simple "Hello World" Python script.
 ```
 
 1. Create this issue
-2. Add the `copilot-generate` label
+2. Add the `copilot` label
 3. Wait for the workflow to complete
 4. Review the generated PR
 

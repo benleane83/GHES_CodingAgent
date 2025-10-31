@@ -6,8 +6,8 @@ on:
 
 jobs:
   copilot-generate:
-    # Only run when the issue has the 'copilot-generate' label
-    if: contains(github.event.issue.labels.*.name, 'copilot-generate')
+    # Only run when the issue has the 'copilot' label
+    if: contains(github.event.issue.labels.*.name, 'copilot')
     runs-on: ubuntu-latest
     
     permissions:
@@ -53,7 +53,7 @@ jobs:
         run: |
           gh issue edit ${{ env.ISSUE_NUMBER }} \
             --add-label "in-progress" \
-            --remove-label "copilot-generate"
+            --remove-label "copilot"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       

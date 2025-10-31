@@ -6,7 +6,7 @@ This guide helps you diagnose and resolve common issues with the GitHub Copilot 
 
 ### 1. Workflow Not Triggering
 
-**Symptom**: Adding the `copilot-generate` label doesn't trigger the workflow.
+**Symptom**: Adding the `copilot` label doesn't trigger the workflow.
 
 **Possible Causes & Solutions**:
 
@@ -18,7 +18,7 @@ This guide helps you diagnose and resolve common issues with the GitHub Copilot 
   - ✅ Go to Actions tab → Select workflow → Ensure it's enabled
 
 - **Label name mismatch**
-  - ✅ Verify label is exactly `copilot-generate` (case-sensitive)
+- ✅ Verify label is exactly `copilot` (case-sensitive)
   - ✅ Check workflow trigger configuration in YAML
 
 - **Insufficient permissions**
@@ -33,25 +33,45 @@ This guide helps you diagnose and resolve common issues with the GitHub Copilot 
 ```
 Error: Bad credentials
 Error: Resource not accessible by integration
+Permission denied
+fatal: unable to access '...': The requested URL returned error: 403
 ```
 
 **Solutions**:
 
-1. **Verify GH_TOKEN**:
+1. **Verify GH_TOKEN exists and is valid**:
    ```bash
-   # Test token locally (replace YOUR_TOKEN)
+   # Test token (replace YOUR_TOKEN)
    curl -H "Authorization: token YOUR_TOKEN" https://api.github.com/user
    ```
+   - Should return your user information
+   - If "Bad credentials", token is invalid or expired
 
-2. **Check token scopes**:
-   - ✅ `repo` scope enabled
-   - ✅ `copilot_requests` scope enabled
-   - ✅ Token not expired
+2. **Check fine-grained PAT permissions** (if using fine-grained token):
+   - ✅ **`contents: read & write`** - Required for pushing code to branches
+   - ✅ **`issues: read & write`** - Required for updating labels and adding comments
+   - ✅ **`pull_requests: read & write`** - Required for creating and managing PRs
+   - **Missing any of these?** Go to GHES → Settings → Developer settings → Personal access tokens → Edit token → Add missing permissions
 
-3. **Regenerate token**:
+3. **Check classic PAT scopes** (if using classic token):
+   - ✅ `repo` scope - Provides full repository access
+   - ✅ `copilot_requests` scope - For Copilot CLI access
+   - **Missing scopes?** Regenerate token with full `repo` scope
+
+4. **Verify token hasn't expired**:
    - Go to GHES → Settings → Developer settings → Personal access tokens
-   - Regenerate token with correct scopes
-   - Update `GH_TOKEN` secret in repository
+   - Check expiration date
+   - If expired, regenerate a new token with no expiration or extended expiration
+
+5. **Regenerate and update token**:
+   - Regenerate: GHES → Settings → Developer settings → Personal access tokens → Regenerate
+   - Update secret: Repository → Settings → Secrets and variables → Actions → Update `GH_TOKEN`
+   - Re-run workflow
+
+6. **Specific permission errors**:
+   - **"Permission denied to push"**: Add `contents: write` permission
+   - **"Cannot edit issue labels"**: Add `issues: write` permission
+   - **"Cannot create pull request"**: Add `pull_requests: write` permission
 
 ### 3. Copilot CLI Installation Fails
 
@@ -243,7 +263,7 @@ Error: Base branch does not exist
 
 2. **Label doesn't exist**:
    - Create labels manually:
-     - `copilot-generate`
+     - `copilot`
      - `in-progress`
      - `completed`
      - `ready-for-review`

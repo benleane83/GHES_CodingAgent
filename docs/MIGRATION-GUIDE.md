@@ -208,7 +208,7 @@ Create a simple Python script that prints "Hello, GHES!".
 - [ ] Script prints "Hello, GHES!"
 ```
 
-2. Add the `copilot-generate` label
+2. Add the `copilot` label
 
 3. Monitor the workflow:
 ```bash
@@ -391,7 +391,7 @@ git push
 ### Issue: Workflow doesn't trigger
 
 **Solution**: 
-- Verify label is exactly `copilot-generate`
+- Verify label is exactly `copilot`
 - Check workflow file syntax
 - Ensure workflow is enabled
 

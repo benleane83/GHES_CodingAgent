@@ -14,7 +14,7 @@ This repository implements an automated coding workflow using **GitHub Copilot C
 
 ### ✨ Key Features
 
-- 🏷️ **Label-driven workflow** - Trigger code generation by adding the `copilot-generate` label
+- 🏷️ **Label-driven workflow** - Trigger code generation by adding the `copilot` label
 - 🤖 **AI-powered coding** - GitHub Copilot CLI generates code based on issue descriptions
 - 🌿 **Automatic branching** - Creates feature branches (`copilot/{issue-number}`)
 - 📬 **Auto PR creation** - Opens pull requests with generated code
@@ -31,13 +31,21 @@ This repository implements an automated coding workflow using **GitHub Copilot C
    
    Go to **Settings** → **Secrets and variables** → **Actions**:
    
-   - `GH_TOKEN` - GitHub PAT with `repo` and `copilot_requests` scopes
+   - `GH_TOKEN` - Fine-grained GitHub PAT with the permissions listed below
    - `CONTEXT7_API_KEY` - (Optional) Context7 API key for documentation
+
+   **Required GH_TOKEN Permissions (Fine-Grained PAT):**
+   - **Repository Permissions:**
+     - `contents: read & write` - For pushing code to branches
+     - `issues: read & write` - For editing issue labels and adding comments
+     - `pull_requests: read & write` - For creating pull requests and managing PRs
+   
+   Note: If using a classic PAT instead, ensure it has `repo` scope with full access.
 
 2. **Create Required Labels**
    
    The workflow uses these labels (create them if they don't exist):
-   - `copilot-generate` - Triggers the workflow
+   - `copilot` - Triggers the workflow
    - `in-progress` - Workflow is running
    - `completed` - Workflow completed successfully
    - `ready-for-review` - PR is ready for review
@@ -65,7 +73,7 @@ Create a Python FastAPI application with a simple health check endpoint.
 
 ### 3️⃣ Trigger the Workflow
 
-Add the **`copilot-generate`** label to the issue.
+Add the **`copilot`** label to the issue.
 
 ### 4️⃣ Watch the Magic ✨
 
@@ -97,15 +105,15 @@ on:
 ```
 
 The workflow triggers when:
-- An issue is opened with the `copilot-generate` label
-- The `copilot-generate` label is added to an existing issue
+- An issue is opened with the `copilot` label
+- The `copilot` label is added to an existing issue
 
 ### Architecture
 
 ```
 GitHub Issue Created
        ↓
-Add 'copilot-generate' Label
+Add 'copilot' Label
        ↓
 Workflow Triggers
        ↓
@@ -163,11 +171,12 @@ mcp-config.json                 # MCP servers configuration
 - **GitHub Issues** - Task management
 - **Bash Scripts** - Automation
 - **Node.js 22.x** - Runtime for Copilot CLI
-- **Python 3.x** - Tooling support
+- **Python 3.x** - Tooling and MCP server runtime
+- **uv** - Python package manager for installing MCP servers
 - **MCP Servers** - Context providers:
-  - **Context7** - Documentation and examples
-  - **Fetch** - Web content retrieval
-  - **Time** - Time-based operations
+  - **Context7** (npx) - Documentation and examples
+  - **Fetch** (uvx) - Web content retrieval
+  - **Time** (uvx) - Time-based operations
 
 ## ⚙️ Configuration
 
@@ -181,6 +190,44 @@ env:
   COPILOT_VERSION: 0.0.352         # Copilot CLI version
 ```
 
+## 🌐 Network Requirements
+
+For the workflow to run successfully, GHES runners must have outbound internet access to:
+
+| Service | Host | Port | Protocol | Purpose |
+|---------|------|------|----------|---------|
+| **GHES API** | `<your-ghes-host>` | 443 | HTTPS | GitHub CLI and API calls |
+| **Copilot CLI** | `registry.npmjs.org` | 443 | HTTPS | Download @github/copilot package |
+| **MCP Servers** | `pypi.org` | 443 | HTTPS | Install MCP servers via uv |
+| **Documentation** | `api.context7.com` | 443 | HTTPS | Context7 MCP service |
+
+### Firewall Configuration
+
+If your GHES runners are behind a firewall, ensure these outbound rules are configured:
+
+```bash
+# Allow outbound HTTPS to required services
+Allow: registry.npmjs.org:443
+Allow: pypi.org:443  
+Allow: api.context7.com:443
+Allow: <your-ghes-host>:443
+```
+
+### Behind Corporate Proxy
+
+If GHES runners access the internet through a corporate proxy, configure:
+
+```yaml
+# In workflow or runner configuration
+HTTP_PROXY: http://proxy.company.com:8080
+HTTPS_PROXY: http://proxy.company.com:8080
+NO_PROXY: <your-ghes-host>
+```
+
+For detailed network configuration and troubleshooting, see **[GHES Compatibility Guide](docs/GHES-COMPATIBILITY.md#-required-networkfirewall-paths)**.
+
+---
+
 ### MCP Servers
 
 Edit `mcp-config.json` to add or remove MCP servers:
@@ -193,10 +240,24 @@ Edit `mcp-config.json` to add or remove MCP servers:
       "command": "npx",
       "tools": ["*"],
       "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "fetch": {
+      "type": "local",
+      "command": "uvx",
+      "tools": ["*"],
+      "args": ["mcp-server-fetch"]
+    },
+    "time": {
+      "type": "local",
+      "command": "uvx",
+      "tools": ["*"],
+      "args": ["mcp-server-time"]
     }
   }
 }
 ```
+
+**Note**: MCP servers using `uvx` are installed on-demand via the `uv` Python package manager from PyPI.
 
 ### Copilot Instructions
 
@@ -298,7 +359,7 @@ Legacy ADO documentation: [README-ADO.md](README-ADO.md)
 
 ### Workflow Not Triggering
 
-- ✅ Verify label is exactly `copilot-generate` (case-sensitive)
+- ✅ Verify label is exactly `copilot` (case-sensitive)
 - ✅ Check workflow file syntax
 - ✅ Ensure workflow is enabled in Actions tab
 
