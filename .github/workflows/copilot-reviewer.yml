@@ -84,7 +84,7 @@ jobs:
           GHES_HOST: ${{ github.server_url }}
         run: |
           # Extract host from server_url (remove https://)
-          GHES_HOST="${{ github.server_url }}" | sed 's|https://||'
+          GHES_HOST=$(echo "${{ github.server_url }}" | sed 's|https://||')
           
           bash ./scripts/get-pr-diff.sh \
             "$GHES_HOST" \
@@ -99,7 +99,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GHES_HOST: ${{ github.server_url }}
         run: |
-          GHES_HOST="${{ github.server_url }}" | sed 's|https://||'
+          GHES_HOST=$(echo "${{ github.server_url }}" | sed 's|https://||')
           
           bash ./scripts/download-pr-files.sh \
             "$GHES_HOST" \
@@ -123,7 +123,7 @@ jobs:
           GHES_HOST: ${{ github.server_url }}
         if: always()
         run: |
-          GHES_HOST="${{ github.server_url }}" | sed 's|https://||'
+          GHES_HOST=$(echo "${{ github.server_url }}" | sed 's|https://||')
           
           bash ./scripts/post-pr-comment.sh \
             "$GHES_HOST" \
