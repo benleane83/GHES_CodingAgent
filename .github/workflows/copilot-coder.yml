@@ -8,7 +8,7 @@ jobs:
   copilot-cli:
     # Only run when the issue has the 'copilot' label
     if: contains(github.event.issue.labels.*.name, 'copilot')
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     permissions:
       contents: write
