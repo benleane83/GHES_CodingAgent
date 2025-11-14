@@ -24,7 +24,7 @@ env:
 
 jobs:
   review:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     name: 🤖 Analyze PR and Generate Review
     if: |
       github.event.action != 'labeled' || 
@@ -80,7 +80,7 @@ jobs:
 
       - name: 🔍 Get PR Differences
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GHES_HOST: ${{ github.server_url }}
         run: |
           # Extract host from server_url (remove https://)
@@ -91,12 +91,12 @@ jobs:
             "${{ github.repository_owner }}" \
             "${{ github.event.repository.name }}" \
             "${{ github.event.pull_request.number }}" \
-            "${{ github.token }}" \
+            "${{ secrets.GH_TOKEN }}" \
             "${{ env.DIFF_FILE }}"
 
       - name: 📁 Download Modified Files
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GHES_HOST: ${{ github.server_url }}
         run: |
           GHES_HOST=$(echo "${{ github.server_url }}" | sed 's|https://||')
@@ -106,13 +106,13 @@ jobs:
             "${{ github.repository_owner }}" \
             "${{ github.event.repository.name }}" \
             "${{ github.event.pull_request.number }}" \
-            "${{ github.token }}" \
+            "${{ secrets.GH_TOKEN }}" \
             "${{ env.ANALYSIS_DIR }}"
 
       - name: 🤖 Analyze with GitHub Copilot CLI
         env:
           MODEL: ${{ env.MODEL }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.COPILOT_TOKEN }}
         run: |
           bash ./scripts/analyze-with-copilot.sh \
             "${{ env.ANALYSIS_DIR }}/source" \
@@ -120,7 +120,7 @@ jobs:
 
       - name: 💬 Publish Comment on PR
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GHES_HOST: ${{ github.server_url }}
         if: always()
         run: |
@@ -132,7 +132,7 @@ jobs:
             "${{ github.event.repository.name }}" \
             "${{ github.event.pull_request.number }}" \
             "${{ env.ANALYSIS_DIR }}/source/pr-comments" \
-            "${{ github.token }}" || true
+            "${{ secrets.GH_TOKEN }}" || true
 
       - name: 📦 Upload Analysis Artifacts
         if: always()

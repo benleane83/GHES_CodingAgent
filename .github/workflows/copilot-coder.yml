@@ -8,7 +8,7 @@ jobs:
   copilot-cli:
     # Only run when the issue has the 'copilot' label
     if: contains(github.event.issue.labels.*.name, 'copilot')
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     permissions:
       contents: write
@@ -113,7 +113,7 @@ jobs:
           echo "🧰 Verifying MCP server access..."
           copilot -p "List tools defined in the current chat session (do not run commands, I am asking about tools defined in the LLM). Just the names in a table, nothing else." --allow-all-tools
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_TOKEN }}
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
       
       - name: 🌿 Create Feature Branch
@@ -152,7 +152,7 @@ jobs:
           
           echo "✅ Implementation completed"
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_TOKEN }}
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
