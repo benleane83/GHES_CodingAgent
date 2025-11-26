@@ -22,23 +22,27 @@ Navigate to your repository **Settings** → **Secrets and variables** → **Act
 ### Required Secrets
 
 1. **`GH_TOKEN`** (Required)
-   - **Description**: GitHub Personal Access Token with repository and Copilot access
-   - **Type**: Fine-grained Personal Access Token (recommended) or Classic PAT
-   - **Fine-Grained PAT Permissions Required**:
-     - **Repository Permissions**:
-       - `contents: read & write` - For creating and pushing branches with code changes
-       - `issues: read & write` - For updating issue labels and adding completion comments
-       - `pull_requests: read & write` - For creating pull requests and managing them
-     - **Account Permissions**:
-       - None specifically required
-   - **Classic PAT Alternative**: Use `repo` scope for full repository access
+   - **Description**: GitHub Personal Access Token for repository operations and GitHub CLI
+   - **Type**: ⚠️ **Classic PAT ONLY** - Fine-grained PATs have issues with GraphQL on GHES
+   - **Required Scopes**:
+     - `repo` - Full control of private repositories
+     - `workflow` - Update GitHub Action workflows
    - **How to create**:
-     1. Go to your GHES instance → Settings → Developer settings → Personal access tokens
-     2. Select "Fine-grained tokens" (recommended) or "Tokens (classic)"
-     3. Configure permissions as listed above
-     4. Copy the token and add it as a repository secret
+     1. Go to `https://<your-ghes-instance>/settings/tokens`
+     2. Click **"Generate new token"** → **"Generate new token (classic)"**
+     3. Set a descriptive name (e.g., "Copilot Workflows")
+     4. Set expiration (recommend 90+ days)
+     5. Select scopes: ✅ `repo`, ✅ `workflow`
+     6. Click **Generate token**
+     7. Copy and add as repository secret
 
-2. **`CONTEXT7_API_KEY`** (Optional)
+   > ⚠️ **Important**: Do NOT use Fine-grained PATs - they fail with `Resource not accessible by personal access token` errors on GHES GraphQL operations.
+
+2. **`COPILOT_TOKEN`** (Required)
+   - **Description**: Token for GitHub Copilot API access
+   - **Required for**: Running Copilot CLI commands
+
+3. **`CONTEXT7_API_KEY`** (Optional)
    - **Description**: API key for Context7 MCP server (for documentation access)
    - **Required for**: Enhanced documentation lookup
    - **How to get**: Sign up at [Context7](https://context7.com)
@@ -121,9 +125,7 @@ The workflow manages issue states using labels:
 
 - **`copilot`**: User adds to trigger workflow (automatically removed when workflow starts)
 - **`in-progress`**: Workflow adds when code generation starts
-- **`completed`**: Workflow adds when code generation finishes
 - **`ready-for-review`**: Workflow adds when PR is created
-- **`copilot-generated`**: Applied to PRs created by the workflow
 
 ## 🔍 Step 5: Monitor Workflow Execution
 
@@ -222,11 +224,68 @@ If your GHES instance uses a custom hostname, ensure:
 
 ### Self-Hosted Runners
 
-If using self-hosted runners:
+⚠️ **CRITICAL REQUIREMENT**: If using self-hosted runners, you **MUST** manually install GitHub CLI before running any workflows.
 
-1. Ensure Node.js 22.x is available
-2. Ensure Python 3.x is available
-3. Configure runner labels in workflow:
+#### Why Manual Installation is Required
+
+Enterprise networks typically:
+- Block outbound internet access during workflow execution
+- Require proxy configuration for external downloads
+- Have slow or restricted access to package repositories (npm, apt)
+
+Automatic installation during workflow runs will fail or timeout in these environments.
+
+#### Required: GitHub CLI (`gh`)
+
+The GitHub CLI must be pre-installed on self-hosted runners. It cannot be installed during workflow execution due to network restrictions in most enterprise environments.
+
+**Installation steps** (run on the runner VM):
+
+```bash
+# Download GitHub CLI
+GH_VERSION="2.62.0"
+cd /tmp
+curl -L -o gh.tar.gz "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz"
+
+# Extract and install
+tar -xzf gh.tar.gz
+sudo mv gh_${GH_VERSION}_linux_amd64/bin/gh /usr/local/bin/
+sudo chmod +x /usr/local/bin/gh
+
+# Cleanup
+rm -rf gh.tar.gz gh_${GH_VERSION}_linux_amd64
+
+# Verify installation
+gh --version
+```
+
+**If the runner cannot reach github.com**, download the binary on another machine and transfer it:
+
+```powershell
+# On a machine with internet access (PowerShell)
+curl -L -o gh.tar.gz "https://github.com/cli/cli/releases/download/v2.62.0/gh_2.62.0_linux_amd64.tar.gz"
+
+# Transfer to runner via SCP
+scp gh.tar.gz user@<runner-ip>:/tmp/
+```
+
+Then on the runner:
+```bash
+cd /tmp
+tar -xzf gh.tar.gz
+sudo mv gh_2.62.0_linux_amd64/bin/gh /usr/local/bin/
+sudo chmod +x /usr/local/bin/gh
+gh --version
+```
+
+#### Other Requirements
+
+- **Node.js 22.x** - Installed automatically by workflow via `actions/setup-node`
+- **Python 3.x** - Installed automatically by workflow via `actions/setup-python`
+
+#### Runner Labels
+
+Configure runner labels in the workflow:
 
 ```yaml
 runs-on: [self-hosted, linux]
@@ -251,7 +310,48 @@ Monitor workflow execution times:
 
 ## 🆘 Troubleshooting
 
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions.
+### Common Issues
+
+#### ❌ GitHub CLI Authentication Failed (HTTP 401)
+
+**Error**: `error validating token: HTTP 401: Bad credentials`
+
+**Cause**: The `GH_TOKEN` secret is either:
+1. Created on github.com instead of your GHES instance
+2. Expired or invalid
+3. Missing required scopes/permissions
+
+**Solution**:
+
+1. **Verify token origin**: The token MUST be created on your GHES instance:
+   - ✅ Correct: `https://<your-ghes-instance>/settings/tokens`
+   - ❌ Wrong: `https://github.com/settings/tokens`
+
+2. **Test the token manually** on the runner:
+   ```bash
+   # Replace <your-ghes-host> and <your-token>
+   curl -H "Authorization: token <your-token>" \
+     https://<your-ghes-host>/api/v3/user
+   ```
+   
+   If this returns 401, the token is invalid for your GHES instance.
+
+3. **Create a new token on GHES** with required permissions:
+   - `repo` (full control)
+   - `workflow` (update workflows)
+   - `read:org` (if using org-level features)
+
+4. **Update the repository secret**:
+   - Go to repository Settings → Secrets and variables → Actions
+   - Update `GH_TOKEN` with the new GHES token
+
+#### ❌ GitHub CLI Not Found
+
+**Error**: `gh: command not found`
+
+**Solution**: GitHub CLI must be manually installed on self-hosted runners. See [Self-Hosted Runners](#self-hosted-runners) section above.
+
+For more issues, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 ## 📚 Additional Resources
 

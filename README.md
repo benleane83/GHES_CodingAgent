@@ -36,29 +36,45 @@ This repository implements an automated coding workflow using **GitHub Copilot C
 
 ### 1️⃣ Setup (One Time)
 
+#### ⚠️ IMPORTANT: Self-Hosted Runner Prerequisites
+
+If using **self-hosted runners**, you MUST manually install GitHub CLI on the runner VM before running workflows:
+
+```bash
+# SSH into your runner VM and run:
+GH_VERSION="2.62.0"
+cd /tmp
+curl -L -o gh.tar.gz "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz"
+tar -xzf gh.tar.gz
+sudo mv gh_${GH_VERSION}_linux_amd64/bin/gh /usr/local/bin/
+sudo chmod +x /usr/local/bin/gh
+gh --version
+```
+
+**Why?** Enterprise networks often block internet access during workflow execution, preventing automatic installation.
+
+See [GHES Setup Guide - Self-Hosted Runners](docs/GHES-SETUP.md#self-hosted-runners) for detailed instructions.
+
+---
+
 1. **Configure Repository Secrets**
    
    Go to **Settings** → **Secrets and variables** → **Actions**:
    
-   - `GH_TOKEN` - Fine-grained GitHub PAT with the permissions listed below
-   - `CONTEXT7_API_KEY` - (Optional) Context7 API key for documentation
+   | Secret | Required | Description |
+   |--------|----------|-------------|
+   | `GH_TOKEN` | ✅ Yes | **Classic PAT** from your GHES instance (⚠️ NOT github.com) |
+   | `COPILOT_TOKEN` | ✅ Yes | Token for GitHub Copilot API access |
+   | `CONTEXT7_API_KEY` | ❌ Optional | Context7 API key for documentation |
 
-   **Required GH_TOKEN Permissions (Fine-Grained PAT):**
-   - **Repository Permissions:**
-     - `contents: read & write` - For pushing code to branches
-     - `issues: read & write` - For editing issue labels and adding comments
-     - `pull_requests: read & write` - For creating pull requests and managing PRs
+   **⚠️ CRITICAL: Use Classic PAT for GH_TOKEN**
    
-   Note: If using a classic PAT instead, ensure it has `repo` scope with full access.
-
-2. **Create Required Labels**
+   The `GH_TOKEN` **must be a Classic PAT** created on your GHES instance:
+   1. Go to `https://<your-ghes-instance>/settings/tokens`
+   2. Click **"Generate new token"** → **"Generate new token (classic)"**
+   3. Select scopes: `repo` and `workflow`
    
-   The workflow uses these labels (create them if they don't exist):
-   - `copilot` - Triggers the workflow
-   - `in-progress` - Workflow is running
-   - `completed` - Workflow completed successfully
-   - `ready-for-review` - PR is ready for review
-   - `copilot-generated` - Applied to generated PRs
+   > **Note**: Fine-grained PATs have issues with GraphQL operations on GHES. Always use Classic PATs.
 
 ### 2️⃣ Create an Issue
 
@@ -88,14 +104,14 @@ Add the **`copilot`** label to the issue.
 
 The workflow will automatically:
 
-1. 🏷️ Update issue labels → `in-progress`
+1. 🏷️ Update issue label → `in-progress`
 2. 🌿 Create branch → `copilot/{issue-number}`
 3. 🤖 Generate code using Copilot CLI
 4. 💾 Commit changes with co-author attribution
 5. 🚀 Push branch to repository
 6. 📬 Create Pull Request
 7. 💬 Comment on issue with PR link
-8. 🏷️ Update labels → `completed`, `ready-for-review`
+8. 🏷️ Update label → `ready-for-review`
 
 ### 5️⃣ Review and Merge
 
@@ -103,6 +119,60 @@ The workflow will automatically:
 2. **Copilot Reviewer automatically analyzes the code** ✨
 3. Test the implementation
 4. Approve and merge when ready
+
+## 🚀 Deploy to New Repositories
+
+Want to install the Copilot workflows into another repository? Use the included deployment scripts!
+
+### Automated Deployment
+
+Two scripts are provided for easy deployment:
+
+| Script | Platform | Usage |
+|--------|----------|-------|
+| `deploy-to-repo.ps1` | Windows (PowerShell) | `./scripts/deploy-to-repo.ps1 -GhesHost <host> -Owner <org> -Repo <repo> -GhToken <token>` |
+| `deploy-to-repo.sh` | Linux/Mac/Git Bash | `./scripts/deploy-to-repo.sh <host> <org> <repo> <token>` |
+
+### What the Scripts Do
+
+1. ✅ Clone target repository from GHES
+2. ✅ Copy workflow files (`.github/workflows/`)
+3. ✅ Copy Copilot instructions (`.github/copilot-instructions.md`)
+4. ✅ Copy helper scripts (`scripts/`)
+5. ✅ Copy MCP configuration (`mcp-config.json`)
+6. ✅ Create required labels (`copilot`, `in-progress`, `completed`, `ready-for-review`)
+7. ✅ Commit and push to setup branch
+8. ✅ Create Pull Request for review
+
+### PowerShell Example (Windows)
+
+```powershell
+# Deploy to a repository on your GHES instance
+./scripts/deploy-to-repo.ps1 `
+    -GhesHost "ghes.company.com" `
+    -Owner "my-org" `
+    -Repo "my-project" `
+    -GhToken "ghp_xxxxxxxxxxxx"
+```
+
+### Bash Example (Linux/Mac)
+
+```bash
+# Deploy to a repository on your GHES instance
+./scripts/deploy-to-repo.sh \
+    ghes.company.com \
+    my-org \
+    my-project \
+    ghp_xxxxxxxxxxxx
+```
+
+### After Deployment
+
+1. Review and merge the created PR in the target repository
+2. Configure the required secrets (`GH_TOKEN`, `COPILOT_TOKEN`)
+3. Start creating issues with the `copilot` label!
+
+> **Note**: The scripts use `gh api --hostname` to ensure compatibility with GHES instances.
 
 ## 🤖 Copilot PR Reviewer (Automatic)
 
@@ -210,6 +280,8 @@ Update Labels (completed, ready-for-review)
 └── copilot-instructions.md       # Instructions for Copilot CLI
 
 scripts/
+├── deploy-to-repo.ps1            # Deploy workflows to new repo (PowerShell)
+├── deploy-to-repo.sh             # Deploy workflows to new repo (Bash)
 ├── prepare-commit.sh             # Prepare commit with co-author
 ├── push-branch.sh                # Push branch to remote
 ├── post-workflow-comment.sh      # Post completion comment

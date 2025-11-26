@@ -265,9 +265,7 @@ Error: Base branch does not exist
    - Create labels manually:
      - `copilot`
      - `in-progress`
-     - `completed`
      - `ready-for-review`
-     - `copilot-generated`
 
 3. **GitHub CLI issues**:
    - Test `gh` CLI authentication:

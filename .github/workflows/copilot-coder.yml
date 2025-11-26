@@ -18,6 +18,8 @@ jobs:
     env:
       MODEL: claude-haiku-4.5
       COPILOT_VERSION: 0.0.352
+      # Extract hostname from server URL (removes https:// prefix)
+      GHES_HOSTNAME: ${{ github.server_url }}
       ISSUE_NUMBER: ${{ github.event.issue.number }}
       ISSUE_TITLE: ${{ github.event.issue.title }}
       ISSUE_BODY: ${{ github.event.issue.body }}
@@ -44,10 +46,31 @@ jobs:
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: copilot/${{ github.event.issue.number }}
       
+      - name: 🔐 Configure Git Credentials for GHES
+        run: |
+          # Extract hostname from server URL (remove https:// prefix)
+          GHES_HOST=$(echo "${{ github.server_url }}" | sed 's|https://||')
+          echo "GHES_HOST=${GHES_HOST}" >> $GITHUB_ENV
+          
+          git config --global credential.helper store
+          echo "https://x-access-token:${{ github.token }}@${GHES_HOST}" >> ~/.git-credentials
+          chmod 600 ~/.git-credentials
+          echo "✅ Git credentials configured for GHES (${GHES_HOST})"
+      
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ github.token }}
+          persist-credentials: true
+      
+      - name: 🔐 Configure GitHub CLI for GHES
+        run: |
+          # Configure gh to use GHES instance (GHES_HOST set in previous step)
+          gh auth login --hostname "${GHES_HOST}" --with-token <<< "${{ secrets.GH_TOKEN }}"
+          gh auth status --hostname "${GHES_HOST}"
+          echo "✅ GitHub CLI configured for GHES (${GHES_HOST})"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: 🏷️ Update Issue Labels - In Progress
         run: |
@@ -84,7 +107,7 @@ jobs:
           echo "NPM global path: ${NPM_PREFIX}/lib/node_modules"
       
       - name: 📦 Cache Global NPM Packages
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           key: npm-global-${{ runner.os }}-copilot-${{ env.COPILOT_VERSION }}
           path: ${{ env.NPM_GLOBAL_PATH }}
@@ -200,7 +223,7 @@ jobs:
             --body-file /tmp/pr_body.txt \
             --base main \
             --head "${BRANCH_NAME}" \
-            --label "copilot-generated" \
+            --label "copilot" \
             --assignee "${ISSUE_CREATOR}")
           
           # Clean up
@@ -226,13 +249,13 @@ jobs:
       - name: 🏷️ Update Issue Labels - Completed
         run: |
           gh issue edit ${{ env.ISSUE_NUMBER }} \
-            --add-label "completed,ready-for-review" \
+            --add-label "ready-for-review" \
             --remove-label "in-progress"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: 📦 Publish Logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: copilot-logs
