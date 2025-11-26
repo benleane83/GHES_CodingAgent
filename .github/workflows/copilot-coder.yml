@@ -57,6 +57,30 @@ jobs:
           token: ${{ github.token }}
           persist-credentials: true
       
+      - name: 🔧 Install GitHub CLI
+        run: |
+          if ! command -v gh &> /dev/null; then
+            echo "Installing GitHub CLI..."
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt-get update
+            sudo apt-get install gh -y
+            echo "✅ GitHub CLI installed"
+          else
+            echo "✅ GitHub CLI already installed"
+          fi
+          gh --version
+      
+      - name: 🔐 Configure GitHub CLI for GHES
+        run: |
+          # Configure gh to use GHES instance
+          gh auth login --hostname vm-ghes.uaenorth.cloudapp.azure.com --with-token <<< "${{ secrets.GH_TOKEN }}"
+          gh auth status --hostname vm-ghes.uaenorth.cloudapp.azure.com
+          echo "✅ GitHub CLI configured for GHES"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
       - name: 🏷️ Update Issue Labels - In Progress
         run: |
           gh issue edit ${{ env.ISSUE_NUMBER }} \
