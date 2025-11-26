@@ -60,12 +60,12 @@ jobs:
       - name: 🔧 Install GitHub CLI
         run: |
           if ! command -v gh &> /dev/null; then
-            echo "Installing GitHub CLI..."
-            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-            sudo apt-get update
-            sudo apt-get install gh -y
+            echo "Installing GitHub CLI via direct download..."
+            GH_VERSION="2.62.0"
+            curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" -o gh.tar.gz
+            tar -xzf gh.tar.gz
+            sudo mv gh_${GH_VERSION}_linux_amd64/bin/gh /usr/local/bin/
+            rm -rf gh.tar.gz gh_${GH_VERSION}_linux_amd64
             echo "✅ GitHub CLI installed"
           else
             echo "✅ GitHub CLI already installed"
