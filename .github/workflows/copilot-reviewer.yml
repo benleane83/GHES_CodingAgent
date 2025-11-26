@@ -61,7 +61,7 @@ jobs:
           echo "NPM global path: ${NPM_PREFIX}/lib/node_modules"
 
       - name: 📦 Cache Global NPM Packages
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           key: npm-global-${{ runner.os }}-copilot-${{ env.COPILOT_VERSION }}
           path: ${{ env.NPM_GLOBAL_PATH }}
@@ -136,7 +136,7 @@ jobs:
 
       - name: 📦 Upload Analysis Artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: pr-analysis-${{ github.event.pull_request.number }}
           path: ${{ env.ANALYSIS_DIR }}/
