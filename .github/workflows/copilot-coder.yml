@@ -101,7 +101,7 @@ jobs:
           echo "NPM global path: ${NPM_PREFIX}/lib/node_modules"
       
       - name: 📦 Cache Global NPM Packages
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           key: npm-global-${{ runner.os }}-copilot-${{ env.COPILOT_VERSION }}
           path: ${{ env.NPM_GLOBAL_PATH }}
@@ -249,7 +249,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: 📦 Publish Logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: copilot-logs
