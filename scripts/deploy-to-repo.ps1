@@ -1,23 +1,30 @@
 # ============================================================================
 # GitHub Copilot Workflows Deployment Script (PowerShell)
 # ============================================================================
-# This script deploys the Copilot Coder and Copilot Reviewer workflows
+# This script deploys the Copilot Coder and Copilot Reviewer caller workflows
 # to a target repository on GitHub Enterprise Server.
 #
-# Usage: .\deploy-to-repo.ps1 -GhesHost <host> -Owner <owner> -Repo <repo> -GhToken <token>
+# PREREQUISITE: You must first clone this repository (GHES_CodingAgent) into
+# your GHES organization. Then run this script FROM that cloned repo to deploy
+# to other repositories in the SAME organization.
 #
-# Example: .\deploy-to-repo.ps1 -GhesHost vm-ghes.company.com -Owner myorg -Repo myrepo -GhToken ghp_xxxxx
+# The caller workflows reference the master workflows in GHES_CodingAgent,
+# so NO scripts folder is needed in the target repository!
+#
+# Usage: .\deploy-to-repo.ps1 -GhesHost <host> -Owner <org> -Repo <repo> -GhToken <token>
+#
+# Example: .\deploy-to-repo.ps1 -GhesHost ghes.company.com -Owner myorg -Repo myproject -GhToken ghp_xxxxx
 # ============================================================================
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true, HelpMessage="Your GHES hostname (e.g., vm-ghes.company.com)")]
+    [Parameter(Mandatory=$true, HelpMessage="Your GHES hostname (e.g., ghes.company.com)")]
     [string]$GhesHost,
     
-    [Parameter(Mandatory=$true, HelpMessage="Repository owner (org or user)")]
+    [Parameter(Mandatory=$true, HelpMessage="Organization name (must be same org where GHES_CodingAgent is cloned)")]
     [string]$Owner,
     
-    [Parameter(Mandatory=$true, HelpMessage="Repository name")]
+    [Parameter(Mandatory=$true, HelpMessage="Target repository name")]
     [string]$Repo,
     
     [Parameter(Mandatory=$true, HelpMessage="Classic PAT with repo and workflow scopes")]
@@ -85,11 +92,13 @@ function Create-Label {
 
 Write-Host ""
 Write-ColorOutput "============================================================================" "Cyan"
-Write-ColorOutput "  GitHub Copilot Workflows Deployment" "Cyan"
+Write-ColorOutput "  GitHub Copilot Workflows Deployment (Reusable Workflow Mode)" "Cyan"
 Write-ColorOutput "============================================================================" "Cyan"
 Write-Host ""
-Write-Host "Target: " -NoNewline
+Write-Host "Target Repository: " -NoNewline
 Write-ColorOutput "https://$GhesHost/$Owner/$Repo" "Green"
+Write-Host "Master Workflows:  " -NoNewline
+Write-ColorOutput "$Owner/GHES_CodingAgent" "Green"
 Write-Host ""
 
 # Authenticate gh CLI with GHES
@@ -131,29 +140,22 @@ try {
     
     # Create directories
     New-Item -ItemType Directory -Path ".github/workflows" -Force | Out-Null
-    New-Item -ItemType Directory -Path "scripts" -Force | Out-Null
     
-    # Copy workflow files
-    Write-Success "Copying workflow files..."
-    Copy-Item "$SourceDir/.github/workflows/copilot-coder.yml" ".github/workflows/"
-    Copy-Item "$SourceDir/.github/workflows/copilot-reviewer.yml" ".github/workflows/"
+    # Copy caller workflow files and update the org reference
+    Write-Success "Copying caller workflow files..."
+    $CoderContent = Get-Content "$SourceDir/.github/workflows/copilot-coder.yml" -Raw
+    $CoderContent = $CoderContent -replace "ghes-test/GHES_CodingAgent", "$Owner/GHES_CodingAgent"
+    Set-Content -Path ".github/workflows/copilot-coder.yml" -Value $CoderContent
     
-    # Copy scripts
-    Write-Success "Copying scripts..."
-    Copy-Item "$SourceDir/scripts/prepare-commit.sh" "scripts/"
-    Copy-Item "$SourceDir/scripts/push-branch.sh" "scripts/"
-    Copy-Item "$SourceDir/scripts/post-workflow-comment.sh" "scripts/"
-    Copy-Item "$SourceDir/scripts/get-pr-diff.sh" "scripts/"
-    Copy-Item "$SourceDir/scripts/download-pr-files.sh" "scripts/"
-    Copy-Item "$SourceDir/scripts/analyze-with-copilot.sh" "scripts/"
-    Copy-Item "$SourceDir/scripts/post-pr-comment.sh" "scripts/"
+    $ReviewerContent = Get-Content "$SourceDir/.github/workflows/copilot-reviewer.yml" -Raw
+    $ReviewerContent = $ReviewerContent -replace "ghes-test/GHES_CodingAgent", "$Owner/GHES_CodingAgent"
+    Set-Content -Path ".github/workflows/copilot-reviewer.yml" -Value $ReviewerContent
     
-    # Copy MCP config
+    # Copy MCP config (needed for Copilot CLI to find MCP servers)
     Write-Success "Copying MCP configuration..."
     Copy-Item "$SourceDir/mcp-config.json" "."
     
-    # Note: Workflow files now use dynamic GHES hostname detection via github.server_url
-    # No hostname replacement needed!
+    # Note: No scripts folder needed - reusable workflows handle everything!
     
     Write-Step "Creating labels..."
     
@@ -167,17 +169,26 @@ try {
     $CommitMessage = @"
 feat: Add GitHub Copilot Coder and Reviewer workflows
 
-This commit adds:
-- copilot-coder.yml: Generates code from GitHub issues
-- copilot-reviewer.yml: Automatically reviews PRs
-- Required scripts for workflow execution
-- MCP server configuration
+This commit adds caller workflows that reference the master workflows
+in $Owner/GHES_CodingAgent repository.
+
+Files added:
+- .github/workflows/copilot-coder.yml (caller workflow)
+- .github/workflows/copilot-reviewer.yml (caller workflow)
+- .github/copilot-instructions.md (Copilot CLI instructions)
+- mcp-config.json (MCP server configuration)
+
+Benefits of reusable workflows:
+- No scripts folder needed in this repository
+- Automatic updates when master workflow is improved
+- Consistent behavior across all repositories
 
 Prerequisites:
 - GH_TOKEN secret (Classic PAT with repo, workflow scopes)
 - COPILOT_TOKEN secret (for Copilot API access)
 - CONTEXT7_API_KEY secret (optional, for documentation)
 - GitHub CLI installed on self-hosted runner
+- Access to $Owner/GHES_CodingAgent repository
 "@
     git commit -m $CommitMessage
     
@@ -196,11 +207,19 @@ This PR adds the GitHub Copilot Coder and Reviewer workflows to this repository.
 
 ### 📦 What's Included
 
-- ``.github/workflows/copilot-coder.yml`` - Generates code from GitHub issues
-- ``.github/workflows/copilot-reviewer.yml`` - Automatically reviews PRs
-- ``.github/copilot-instructions.md`` - Instructions for Copilot CLI
-- ``scripts/`` - Required automation scripts
-- ``mcp-config.json`` - MCP server configuration
+| File | Description |
+|------|-------------|
+| ``.github/workflows/copilot-coder.yml`` | Caller workflow for code generation |
+| ``.github/workflows/copilot-reviewer.yml`` | Caller workflow for PR reviews |
+| ``.github/copilot-instructions.md`` | Instructions for Copilot CLI |
+| ``mcp-config.json`` | MCP server configuration |
+
+### ✨ Reusable Workflow Architecture
+
+These are **lightweight caller workflows** that invoke the master workflows from:
+``````
+$Owner/GHES_CodingAgent
+``````
 
 ### ⚠️ Required Setup (Before Merging)
 
@@ -229,10 +248,6 @@ Your runner must have these tools pre-installed:
 #### Copilot Reviewer
 - Automatically runs on every PR
 - Posts review comments with findings
-
-### 📚 Documentation
-
-See the [GHES Setup Guide](docs/GHES-SETUP.md) for detailed instructions.
 "@
 
     # Save PR body to temp file to handle special characters

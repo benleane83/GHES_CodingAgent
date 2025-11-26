@@ -4,10 +4,78 @@ This directory contains helper scripts used by the GitHub Copilot Coder workflow
 
 ## 📋 Scripts Overview
 
-### Core Scripts
+### Deployment Scripts
+- `deploy-to-repo.ps1` - PowerShell script to deploy workflows to a target repository
+- `deploy-to-repo.sh` - Bash script to deploy workflows to a target repository
+
+### Core Workflow Scripts
 - `prepare-commit.sh` - Prepares and commits changes with co-author attribution
 - `push-branch.sh` - Pushes feature branch to remote repository
 - `post-workflow-comment.sh` - Posts completion comment to GitHub issue
+
+## 🚀 Deployment Scripts
+
+### `deploy-to-repo.ps1` (PowerShell)
+
+Deploys the Copilot caller workflows to a target repository on GHES.
+
+**Prerequisites:** You must first clone GHES_CodingAgent into your GHES organization.
+
+**Usage:**
+```powershell
+.\scripts\deploy-to-repo.ps1 -GhesHost <host> -Owner <org> -Repo <repo> -GhToken <token>
+```
+
+**Parameters:**
+- `GhesHost` - Your GHES hostname (e.g., `ghes.company.com`)
+- `Owner` - Organization name (where GHES_CodingAgent is cloned)
+- `Repo` - Target repository name
+- `GhToken` - Classic PAT with `repo` and `workflow` scopes
+
+**Example:**
+```powershell
+.\scripts\deploy-to-repo.ps1 -GhesHost ghes.company.com -Owner myorg -Repo myproject -GhToken ghp_xxxxx
+```
+
+### `deploy-to-repo.sh` (Bash)
+
+Deploys the Copilot caller workflows to a target repository on GHES.
+
+**Prerequisites:** You must first clone GHES_CodingAgent into your GHES organization.
+
+**Usage:**
+```bash
+./scripts/deploy-to-repo.sh <ghes-host> <org> <repo> <gh-token>
+```
+
+**Parameters:**
+- `ghes-host` - Your GHES hostname (e.g., `ghes.company.com`)
+- `org` - Organization name (where GHES_CodingAgent is cloned)
+- `repo` - Target repository name
+- `gh-token` - Classic PAT with `repo` and `workflow` scopes
+
+**Example:**
+```bash
+./scripts/deploy-to-repo.sh ghes.company.com myorg myproject ghp_xxxxx
+```
+
+**What the deployment scripts do:**
+1. Clone the target repository
+2. Create a setup branch (`setup/copilot-workflows`)
+3. Copy caller workflow files (updating org references)
+4. Copy `copilot-instructions.md` and `mcp-config.json`
+5. Create required labels (`copilot`, `in-progress`, `ready-for-review`)
+6. Push the branch and create a Pull Request
+
+**Files deployed to target repos:**
+- `.github/workflows/copilot-coder.yml` - Caller workflow
+- `.github/workflows/copilot-reviewer.yml` - Caller workflow
+- `.github/copilot-instructions.md` - Copilot instructions
+- `mcp-config.json` - MCP configuration
+
+> **Note:** No `scripts/` folder is deployed! The caller workflows reference the master workflows in the central GHES_CodingAgent repository.
+
+---
 
 ## � Script Descriptions
 

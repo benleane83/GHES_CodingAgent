@@ -1,0 +1,204 @@
+name: 🤖 Copilot PR Reviewer (Master)
+
+# This is a reusable workflow that can be called from other repositories.
+# It contains the full implementation logic for the Copilot PR Reviewer.
+#
+# To use this workflow from another repository, create a caller workflow:
+#   jobs:
+#     review:
+#       uses: <org>/GHES_CodingAgent/.github/workflows/copilot-reviewer-master.yml@main
+#       secrets: inherit
+
+on:
+  # Direct trigger (for this repository)
+  pull_request:
+    types: [opened, synchronize, labeled]
+    branches:
+      - main
+      - develop
+      - feature/*
+  
+  # Reusable workflow trigger (for other repositories)
+  workflow_call:
+    secrets:
+      GH_TOKEN:
+        description: 'Classic PAT with repo and workflow scopes'
+        required: true
+      COPILOT_TOKEN:
+        description: 'Token for GitHub Copilot API access'
+        required: true
+      CONTEXT7_API_KEY:
+        description: 'API key for Context7 documentation service'
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  MODEL: claude-haiku-4.5
+  COPILOT_VERSION: latest
+  ANALYSIS_DIR: ${{ github.workspace }}/pr-analysis
+  DIFF_FILE: ${{ github.workspace }}/pr-diff.json
+
+jobs:
+  review:
+    runs-on: self-hosted
+    name: 🤖 Analyze PR and Generate Review
+    if: |
+      github.event.action != 'labeled' || 
+      contains(github.event.pull_request.labels.*.name, 'copilot')
+    
+    steps:
+      - name: 📋 Show PR Information
+        run: |
+          echo "📋 Pull Request Information:"
+          echo "  - Repository: ${{ github.repository }}"
+          echo "  - PR #: ${{ github.event.pull_request.number }}"
+          echo "  - Source Branch: ${{ github.event.pull_request.head.ref }}"
+          echo "  - Target Branch: ${{ github.event.pull_request.base.ref }}"
+          echo "  - Source Commit: ${{ github.event.pull_request.head.sha }}"
+          echo ""
+          echo "📁 Working directories:"
+          echo "  - Analysis Dir: ${{ env.ANALYSIS_DIR }}"
+          echo "  - Diff File: ${{ env.DIFF_FILE }}"
+
+      - name: 📂 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ⚙️ Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: 🔍 Detect NPM Global Path
+        run: |
+          NPM_PREFIX=$(npm config get prefix)
+          echo "NPM_GLOBAL_PATH=${NPM_PREFIX}/lib/node_modules" >> $GITHUB_ENV
+          echo "NPM global path: ${NPM_PREFIX}/lib/node_modules"
+
+      - name: 📦 Cache Global NPM Packages
+        uses: actions/cache@v3
+        with:
+          key: npm-global-${{ runner.os }}-copilot-${{ env.COPILOT_VERSION }}
+          path: ${{ env.NPM_GLOBAL_PATH }}
+          restore-keys: |
+            npm-global-${{ runner.os }}-copilot-
+
+      - name: 📦 Install Copilot CLI
+        run: |
+          if ! command -v copilot &> /dev/null; then
+            echo "Installing @github/copilot@${{ env.COPILOT_VERSION }}..."
+            npm install -g @github/copilot@${{ env.COPILOT_VERSION }}
+          else
+            echo "✅ @github/copilot already installed (from cache)"
+            copilot --version
+          fi
+
+      - name: 🔍 Get PR Differences
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GHES_HOST: ${{ github.server_url }}
+        run: |
+          # Extract host from server_url (remove https://)
+          GHES_HOST=$(echo "${{ github.server_url }}" | sed 's|https://||')
+          
+          bash ./scripts/get-pr-diff.sh \
+            "$GHES_HOST" \
+            "${{ github.repository_owner }}" \
+            "${{ github.event.repository.name }}" \
+            "${{ github.event.pull_request.number }}" \
+            "${{ secrets.GH_TOKEN }}" \
+            "${{ env.DIFF_FILE }}"
+
+      - name: 📁 Download Modified Files
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GHES_HOST: ${{ github.server_url }}
+        run: |
+          GHES_HOST=$(echo "${{ github.server_url }}" | sed 's|https://||')
+          
+          bash ./scripts/download-pr-files.sh \
+            "$GHES_HOST" \
+            "${{ github.repository_owner }}" \
+            "${{ github.event.repository.name }}" \
+            "${{ github.event.pull_request.number }}" \
+            "${{ secrets.GH_TOKEN }}" \
+            "${{ env.ANALYSIS_DIR }}"
+
+      - name: 🤖 Analyze with GitHub Copilot CLI
+        env:
+          MODEL: ${{ env.MODEL }}
+          GH_TOKEN: ${{ secrets.COPILOT_TOKEN }}
+        run: |
+          bash ./scripts/analyze-with-copilot.sh \
+            "${{ env.ANALYSIS_DIR }}/source" \
+            "${{ env.ANALYSIS_DIR }}/source/pr-comments"
+
+      - name: 💬 Publish Comment on PR
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GHES_HOST: ${{ github.server_url }}
+        if: always()
+        run: |
+          GHES_HOST=$(echo "${{ github.server_url }}" | sed 's|https://||')
+          
+          bash ./scripts/post-pr-comment.sh \
+            "$GHES_HOST" \
+            "${{ github.repository_owner }}" \
+            "${{ github.event.repository.name }}" \
+            "${{ github.event.pull_request.number }}" \
+            "${{ env.ANALYSIS_DIR }}/source/pr-comments" \
+            "${{ secrets.GH_TOKEN }}" || true
+
+      - name: 📦 Upload Analysis Artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: pr-analysis-${{ github.event.pull_request.number }}
+          path: ${{ env.ANALYSIS_DIR }}/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: 📊 Summary
+        if: always()
+        run: |
+          echo "## 📊 PR Review Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- PR #: ${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Author: ${{ github.event.pull_request.user.login }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -d "${{ env.ANALYSIS_DIR }}/source/pr-comments" ]; then
+            COMMENT_COUNT=$(find "${{ env.ANALYSIS_DIR }}/source/pr-comments" -name "*_analysis.md" 2>/dev/null | wc -l)
+            echo "**Review Results:**" >> $GITHUB_STEP_SUMMARY
+            echo "- Comments Generated: $COMMENT_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "- Model Used: ${{ env.MODEL }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if [ $COMMENT_COUNT -gt 0 ]; then
+              echo "**Issues Found:**" >> $GITHUB_STEP_SUMMARY
+              find "${{ env.ANALYSIS_DIR }}/source/pr-comments" -name "*_analysis.md" | sort | while read file; do
+                echo "- $(basename "$file" _analysis.md)" >> $GITHUB_STEP_SUMMARY
+              done
+            else
+              echo "✅ No issues found!" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "**Review Results:**" >> $GITHUB_STEP_SUMMARY
+            echo "- Comments Generated: 0" >> $GITHUB_STEP_SUMMARY
+            echo "- Model Used: ${{ env.MODEL }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Status: ✅ No issues found!" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifacts:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Full analysis available in [pr-analysis artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)" >> $GITHUB_STEP_SUMMARY

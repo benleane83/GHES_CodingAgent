@@ -2,12 +2,19 @@
 # ============================================================================
 # GitHub Copilot Workflows Deployment Script
 # ============================================================================
-# This script deploys the Copilot Coder and Copilot Reviewer workflows
+# This script deploys the Copilot Coder and Copilot Reviewer caller workflows
 # to a target repository on GitHub Enterprise Server.
 #
-# Usage: ./deploy-to-repo.sh <ghes-host> <owner> <repo> <gh-token>
+# PREREQUISITE: You must first clone this repository (GHES_CodingAgent) into
+# your GHES organization. Then run this script FROM that cloned repo to deploy
+# to other repositories in the SAME organization.
 #
-# Example: ./deploy-to-repo.sh vm-ghes.company.com myorg myrepo ghp_xxxxx
+# The caller workflows reference the master workflows in GHES_CodingAgent,
+# so NO scripts folder is needed in the target repository!
+#
+# Usage: ./deploy-to-repo.sh <ghes-host> <org> <repo> <gh-token>
+#
+# Example: ./deploy-to-repo.sh ghes.company.com myorg myproject ghp_xxxxx
 # ============================================================================
 
 set -e
@@ -21,16 +28,16 @@ NC='\033[0m' # No Color
 
 # Check arguments
 if [ "$#" -lt 4 ]; then
-    echo -e "${RED}Usage: $0 <ghes-host> <owner> <repo> <gh-token>${NC}"
+    echo -e "${RED}Usage: $0 <ghes-host> <org> <repo> <gh-token>${NC}"
     echo ""
     echo "Arguments:"
-    echo "  ghes-host  - Your GHES hostname (e.g., vm-ghes.company.com)"
-    echo "  owner      - Repository owner (org or user)"
-    echo "  repo       - Repository name"
+    echo "  ghes-host  - Your GHES hostname (e.g., ghes.company.com)"
+    echo "  org        - Organization name (must be same org where GHES_CodingAgent is cloned)"
+    echo "  repo       - Target repository name"
     echo "  gh-token   - Classic PAT with repo and workflow scopes"
     echo ""
     echo "Example:"
-    echo "  $0 vm-ghes.company.com myorg myrepo ghp_xxxxx"
+    echo "  $0 ghes.company.com myorg myproject ghp_xxxxx"
     exit 1
 fi
 
@@ -44,10 +51,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo -e "${BLUE}============================================================================${NC}"
-echo -e "${BLUE}  GitHub Copilot Workflows Deployment${NC}"
+echo -e "${BLUE}  GitHub Copilot Workflows Deployment (Reusable Workflow Mode)${NC}"
 echo -e "${BLUE}============================================================================${NC}"
 echo ""
-echo -e "Target: ${GREEN}https://${GHES_HOST}/${OWNER}/${REPO}${NC}"
+echo -e "Target Repository: ${GREEN}https://${GHES_HOST}/${OWNER}/${REPO}${NC}"
+echo -e "Master Workflows:  ${GREEN}${OWNER}/GHES_CodingAgent${NC}"
 echo ""
 
 # Authenticate gh CLI with GHES
@@ -78,32 +86,17 @@ echo -e "${YELLOW}📁 Creating directory structure...${NC}"
 
 # Create directories
 mkdir -p .github/workflows
-mkdir -p scripts
 
-# Copy workflow files
-echo -e "${GREEN}  ✓ Copying workflow files...${NC}"
-cp "$SOURCE_DIR/.github/workflows/copilot-coder.yml" .github/workflows/
-cp "$SOURCE_DIR/.github/workflows/copilot-reviewer.yml" .github/workflows/
+# Copy caller workflow files and update the org reference
+echo -e "${GREEN}  ✓ Copying caller workflow files...${NC}"
+sed "s|ghes-test/GHES_CodingAgent|${OWNER}/GHES_CodingAgent|g" \
+    "$SOURCE_DIR/.github/workflows/copilot-coder.yml" > .github/workflows/copilot-coder.yml
+sed "s|ghes-test/GHES_CodingAgent|${OWNER}/GHES_CodingAgent|g" \
+    "$SOURCE_DIR/.github/workflows/copilot-reviewer.yml" > .github/workflows/copilot-reviewer.yml
 
-# Copy scripts
-echo -e "${GREEN}  ✓ Copying scripts...${NC}"
-cp "$SOURCE_DIR/scripts/prepare-commit.sh" scripts/
-cp "$SOURCE_DIR/scripts/push-branch.sh" scripts/
-cp "$SOURCE_DIR/scripts/post-workflow-comment.sh" scripts/
-cp "$SOURCE_DIR/scripts/get-pr-diff.sh" scripts/
-cp "$SOURCE_DIR/scripts/download-pr-files.sh" scripts/
-cp "$SOURCE_DIR/scripts/analyze-with-copilot.sh" scripts/
-cp "$SOURCE_DIR/scripts/post-pr-comment.sh" scripts/
-
-# Make scripts executable
-chmod +x scripts/*.sh
-
-# Copy MCP config
+# Copy MCP config (needed for Copilot CLI to find MCP servers)
 echo -e "${GREEN}  ✓ Copying MCP configuration...${NC}"
 cp "$SOURCE_DIR/mcp-config.json" .
-
-# Note: Workflow files now use dynamic GHES hostname detection via github.server_url
-# No hostname replacement needed!
 
 echo ""
 echo -e "${YELLOW}📝 Creating labels...${NC}"
@@ -134,17 +127,26 @@ echo -e "${YELLOW}💾 Committing changes...${NC}"
 git add -A
 git commit -m "feat: Add GitHub Copilot Coder and Reviewer workflows
 
-This commit adds:
-- copilot-coder.yml: Generates code from GitHub issues
-- copilot-reviewer.yml: Automatically reviews PRs
-- Required scripts for workflow execution
-- MCP server configuration
+This commit adds caller workflows that reference the master workflows
+in ${OWNER}/GHES_CodingAgent repository.
+
+Files added:
+- .github/workflows/copilot-coder.yml (caller workflow)
+- .github/workflows/copilot-reviewer.yml (caller workflow)
+- .github/copilot-instructions.md (Copilot CLI instructions)
+- mcp-config.json (MCP server configuration)
+
+Benefits of reusable workflows:
+- No scripts folder needed in this repository
+- Automatic updates when master workflow is improved
+- Consistent behavior across all repositories
 
 Prerequisites:
 - GH_TOKEN secret (Classic PAT with repo, workflow scopes)
 - COPILOT_TOKEN secret (for Copilot API access)
 - CONTEXT7_API_KEY secret (optional, for documentation)
-- GitHub CLI installed on self-hosted runner"
+- GitHub CLI installed on self-hosted runner
+- Access to ${OWNER}/GHES_CodingAgent repository"
 
 echo ""
 echo -e "${YELLOW}🚀 Pushing branch...${NC}"
@@ -159,11 +161,19 @@ This PR adds the GitHub Copilot Coder and Reviewer workflows to this repository.
 
 ### 📦 What's Included
 
-- \`.github/workflows/copilot-coder.yml\` - Generates code from GitHub issues
-- \`.github/workflows/copilot-reviewer.yml\` - Automatically reviews PRs
-- \`.github/copilot-instructions.md\` - Instructions for Copilot CLI
-- \`scripts/\` - Required automation scripts
-- \`mcp-config.json\` - MCP server configuration
+| File | Description |
+|------|-------------|
+| \`.github/workflows/copilot-coder.yml\` | Caller workflow for code generation |
+| \`.github/workflows/copilot-reviewer.yml\` | Caller workflow for PR reviews |
+| \`.github/copilot-instructions.md\` | Instructions for Copilot CLI |
+| \`mcp-config.json\` | MCP server configuration |
+
+### ✨ Reusable Workflow Architecture
+
+These are **lightweight caller workflows** that invoke the master workflows from:
+\`\`\`
+${OWNER}/GHES_CodingAgent
+\`\`\`
 
 ### ⚠️ Required Setup (Before Merging)
 
@@ -177,7 +187,11 @@ Go to **Settings → Secrets and variables → Actions** and add:
 | \`COPILOT_TOKEN\` | ✅ Yes | Token for GitHub Copilot API access |
 | \`CONTEXT7_API_KEY\` | ❌ Optional | API key for Context7 documentation service |
 
-#### 2. Self-Hosted Runner Prerequisites
+#### 2. Repository Access
+
+Ensure this repository can access workflows from \`${OWNER}/GHES_CodingAgent\`.
+
+#### 3. Self-Hosted Runner Prerequisites
 
 Your runner must have these tools pre-installed:
 - **GitHub CLI (\`gh\`)** - [Installation instructions](https://cli.github.com/)
@@ -192,10 +206,6 @@ Your runner must have these tools pre-installed:
 #### Copilot Reviewer
 - Automatically runs on every PR
 - Posts review comments with findings
-
-### 📚 Documentation
-
-See the [GHES Setup Guide](docs/GHES-SETUP.md) for detailed instructions.
 "
 
 # Use gh api with explicit hostname for GHES compatibility

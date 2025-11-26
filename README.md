@@ -120,34 +120,71 @@ The workflow will automatically:
 3. Test the implementation
 4. Approve and merge when ready
 
-## 🚀 Deploy to New Repositories
+## 🚀 Deployment Guide
 
-Want to install the Copilot workflows into another repository? Use the included deployment scripts!
+This section explains how to deploy the Copilot workflows to repositories in your organization.
 
-### Automated Deployment
+### Deployment Architecture
 
-Two scripts are provided for easy deployment:
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        Your GHES Organization                           │
+│                                                                         │
+│  ┌─────────────────────────┐      ┌─────────────────────────────────┐  │
+│  │   GHES_CodingAgent      │      │     Target Repository           │  │
+│  │   (Central/Master)      │      │     (e.g., my-project)          │  │
+│  │                         │      │                                 │  │
+│  │  • Master workflows     │      │  • Caller workflows (tiny)      │  │
+│  │  • All scripts          │◄─────│  • copilot-instructions.md      │  │
+│  │  • Documentation        │      │  • mcp-config.json              │  │
+│  │                         │ uses │                                 │  │
+│  └─────────────────────────┘      └─────────────────────────────────┘  │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-| Script | Platform | Usage |
-|--------|----------|-------|
-| `deploy-to-repo.ps1` | Windows (PowerShell) | `./scripts/deploy-to-repo.ps1 -GhesHost <host> -Owner <org> -Repo <repo> -GhToken <token>` |
-| `deploy-to-repo.sh` | Linux/Mac/Git Bash | `./scripts/deploy-to-repo.sh <host> <org> <repo> <token>` |
+### Step 1️⃣: Clone This Repository to Your Organization
 
-### What the Scripts Do
+First, clone or fork this repository into your GHES organization:
 
-1. ✅ Clone target repository from GHES
-2. ✅ Copy workflow files (`.github/workflows/`)
-3. ✅ Copy Copilot instructions (`.github/copilot-instructions.md`)
-4. ✅ Copy helper scripts (`scripts/`)
-5. ✅ Copy MCP configuration (`mcp-config.json`)
-6. ✅ Create required labels (`copilot`, `in-progress`, `completed`, `ready-for-review`)
-7. ✅ Commit and push to setup branch
-8. ✅ Create Pull Request for review
+**Option A: Clone via GHES UI**
+1. Create a new repository named `GHES_CodingAgent` in your org
+2. Clone this repo locally and push to your GHES instance:
+   ```bash
+   git clone https://github.com/original/GHES_CodingAgent.git
+   cd GHES_CodingAgent
+   git remote set-url origin https://<your-ghes>/your-org/GHES_CodingAgent.git
+   git push -u origin main
+   ```
 
-### PowerShell Example (Windows)
+**Option B: For Air-Gapped Environments**
+1. Download this repository as a ZIP
+2. Create a new repository in your GHES org
+3. Upload/push all files to the new repository
+
+**Option C: Fork (if available)**
+- Fork directly within GHES if the source repo is accessible
+
+### Step 2️⃣: Configure the Central Repository
+
+After cloning to your org, configure the `GHES_CodingAgent` repository:
+
+1. **Enable Workflow Access** (Required for reusable workflows)
+   - Go to **Settings → Actions → General**
+   - Under "Access", select **"Accessible from repositories in the organization"**
+   
+2. **Add Repository Secrets**
+   - `GH_TOKEN`: Classic PAT with `repo` and `workflow` scopes
+   - `COPILOT_TOKEN`: Token for Copilot API access
+   - `CONTEXT7_API_KEY`: (Optional) Context7 API key
+
+### Step 3️⃣: Deploy to Target Repositories
+
+Use the deployment scripts to install Copilot workflows into other repositories in your org:
+
+#### PowerShell (Windows)
 
 ```powershell
-# Deploy to a repository on your GHES instance
 ./scripts/deploy-to-repo.ps1 `
     -GhesHost "ghes.company.com" `
     -Owner "my-org" `
@@ -155,10 +192,9 @@ Two scripts are provided for easy deployment:
     -GhToken "ghp_xxxxxxxxxxxx"
 ```
 
-### Bash Example (Linux/Mac)
+#### Bash (Linux/Mac/Git Bash)
 
 ```bash
-# Deploy to a repository on your GHES instance
 ./scripts/deploy-to-repo.sh \
     ghes.company.com \
     my-org \
@@ -166,13 +202,44 @@ Two scripts are provided for easy deployment:
     ghp_xxxxxxxxxxxx
 ```
 
-### After Deployment
+### What Gets Deployed
 
-1. Review and merge the created PR in the target repository
-2. Configure the required secrets (`GH_TOKEN`, `COPILOT_TOKEN`)
-3. Start creating issues with the `copilot` label!
+The scripts deploy **lightweight caller workflows** to target repositories:
 
-> **Note**: The scripts use `gh api --hostname` to ensure compatibility with GHES instances.
+| File | Size | Description |
+|------|------|-------------|
+| `.github/workflows/copilot-coder.yml` | ~30 lines | Calls master coder workflow |
+| `.github/workflows/copilot-reviewer.yml` | ~35 lines | Calls master reviewer workflow |
+| `.github/copilot-instructions.md` | ~3KB | Instructions for Copilot CLI |
+| `mcp-config.json` | ~500B | MCP server configuration |
+
+**No `scripts/` folder is copied!** The master workflows in `GHES_CodingAgent` contain all the logic.
+
+### Step 4️⃣: Configure Target Repository Secrets
+
+After merging the deployment PR, add secrets to the target repository:
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `GH_TOKEN` | ✅ Yes | Classic PAT with `repo` and `workflow` scopes |
+| `COPILOT_TOKEN` | ✅ Yes | Token for Copilot API access |
+| `CONTEXT7_API_KEY` | ❌ Optional | Context7 API key for documentation |
+
+### Step 5️⃣: Start Using Copilot!
+
+1. Create an issue in your target repository
+2. Add the `copilot` label
+3. Watch Copilot generate code and create a PR!
+
+### Benefits of This Architecture
+
+| Benefit | Description |
+|---------|-------------|
+| **Centralized Updates** | Update master workflows once, all repos get improvements |
+| **Minimal Footprint** | Target repos only have ~4 small files |
+| **No Script Duplication** | Scripts live only in central repo |
+| **Easy Rollout** | Deploy to new repos in seconds |
+| **Version Control** | Pin to specific tags/commits if needed |
 
 ## 🤖 Copilot PR Reviewer (Automatic)
 
@@ -275,13 +342,15 @@ Update Labels (completed, ready-for-review)
 ```
 .github/
 ├── workflows/
-│   ├── copilot-coder.yml         # Code generation workflow
-│   └── copilot-reviewer.yml      # PR review workflow (NEW!)
-└── copilot-instructions.md       # Instructions for Copilot CLI
+│   ├── copilot-coder-master.yml    # Master workflow (reusable) - full logic
+│   ├── copilot-coder.yml           # Caller workflow (lightweight)
+│   ├── copilot-reviewer-master.yml # Master workflow (reusable) - full logic
+│   └── copilot-reviewer.yml        # Caller workflow (lightweight)
+└── copilot-instructions.md         # Instructions for Copilot CLI
 
 scripts/
-├── deploy-to-repo.ps1            # Deploy workflows to new repo (PowerShell)
-├── deploy-to-repo.sh             # Deploy workflows to new repo (Bash)
+├── deploy-to-repo.ps1            # Deploy to target repo (PowerShell)
+├── deploy-to-repo.sh             # Deploy to target repo (Bash)
 ├── prepare-commit.sh             # Prepare commit with co-author
 ├── push-branch.sh                # Push branch to remote
 ├── post-workflow-comment.sh      # Post completion comment
@@ -292,14 +361,22 @@ scripts/
 
 docs/
 ├── GHES-SETUP.md                # Detailed setup guide
-├── GHES-COMPATIBILITY.md        # GHES compatibility info
-├── COPILOT-REVIEWER.md          # PR Reviewer documentation (NEW!)
-├── REVIEWER-MIGRATION.md        # ADO to GHES adaptation guide (NEW!)
-├── MIGRATION-GUIDE.md           # Migration from ADO guide
-└── TROUBLESHOOTING.md           # Common issues and solutions
+├── DEPLOYMENT.md                # Deployment guide
+├── COPILOT-REVIEWER.md          # PR Reviewer documentation
+├── TROUBLESHOOTING.md           # Common issues and solutions
+└── ...                          # Other documentation
 
 mcp-config.json                  # MCP servers configuration
 ```
+
+### Master vs Caller Workflows
+
+| Type | File | Purpose |
+|------|------|---------|
+| **Master** | `*-master.yml` | Contains full implementation logic, called by other repos |
+| **Caller** | `*.yml` | Lightweight wrapper that invokes the master workflow |
+
+Target repositories only receive the **caller workflows**, which are ~30 lines each.
 
 ## 🛠️ Technologies Used
 
