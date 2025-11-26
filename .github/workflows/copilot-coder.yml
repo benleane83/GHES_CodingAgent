@@ -44,17 +44,17 @@ jobs:
           REPO_NAME: ${{ github.repository }}
           BRANCH_NAME: copilot/${{ github.event.issue.number }}
       
-      - name: � Configure Git Credentials for GHES
+      - name: 🔐 Configure Git Credentials for GHES
         run: |
           git config --global credential.helper store
-          echo "https://x-access-token:${{ secrets.GH_TOKEN }}@vm-ghes.uaenorth.cloudapp.azure.com" >> ~/.git-credentials
+          echo "https://x-access-token:${{ github.token }}@vm-ghes.uaenorth.cloudapp.azure.com" >> ~/.git-credentials
           chmod 600 ~/.git-credentials
           echo "✅ Git credentials configured for GHES"
       
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ github.token }}
           persist-credentials: true
       
       - name: 🏷️ Update Issue Labels - In Progress
