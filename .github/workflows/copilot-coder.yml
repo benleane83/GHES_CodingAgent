@@ -217,7 +217,7 @@ jobs:
             --body-file /tmp/pr_body.txt \
             --base main \
             --head "${BRANCH_NAME}" \
-            --label "copilot-generated" \
+            --label "copilot" \
             --assignee "${ISSUE_CREATOR}")
           
           # Clean up
@@ -243,7 +243,7 @@ jobs:
       - name: 🏷️ Update Issue Labels - Completed
         run: |
           gh issue edit ${{ env.ISSUE_NUMBER }} \
-            --add-label "completed,ready-for-review" \
+            --add-label "ready-for-review" \
             --remove-label "in-progress"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
