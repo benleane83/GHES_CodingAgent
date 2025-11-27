@@ -77,9 +77,24 @@ cd target-repo
 git config user.name "GitHub Copilot Setup"
 git config user.email "copilot-setup@${GHES_HOST}"
 
+# Check if repo is empty (no commits yet)
+IS_EMPTY_REPO=false
+if ! git rev-parse HEAD >/dev/null 2>&1; then
+    IS_EMPTY_REPO=true
+    echo -e "${YELLOW}  ⚠ Empty repository detected - will initialize with main branch${NC}"
+fi
+
 # Create branch for deployment
 BRANCH_NAME="setup/copilot-workflows"
-git checkout -b "$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME"
+
+if [ "$IS_EMPTY_REPO" = true ]; then
+    # For empty repos, we need to create the main branch first with an initial commit
+    # then create the feature branch from it
+    git checkout -b main 2>/dev/null || true
+else
+    # For existing repos, create feature branch
+    git checkout -b "$BRANCH_NAME" 2>/dev/null || git checkout "$BRANCH_NAME"
+fi
 
 echo ""
 echo -e "${YELLOW}📁 Creating directory structure...${NC}"
@@ -145,6 +160,36 @@ Prerequisites:
 
 echo ""
 echo -e "${YELLOW}🚀 Pushing branch...${NC}"
+
+if [ "$IS_EMPTY_REPO" = true ]; then
+    # For empty repos: just push main directly (no PR needed)
+    echo -e "${YELLOW}  Initializing main branch...${NC}"
+    git push -u origin main
+    
+    echo ""
+    echo -e "${GREEN}============================================================================${NC}"
+    echo -e "${GREEN}  ✅ Deployment Complete (Empty Repository Initialized)!${NC}"
+    echo -e "${GREEN}============================================================================${NC}"
+    echo ""
+    echo -e "Workflows committed directly to main branch: ${BLUE}https://${GHES_HOST}/${OWNER}/${REPO}${NC}"
+    echo ""
+    echo -e "${YELLOW}⚠️  Next Steps:${NC}"
+    echo ""
+    echo "1. Add these secrets to the repository:"
+    echo "   - GH_TOKEN: Classic PAT with repo, workflow scopes (from GHES)"
+    echo "   - COPILOT_TOKEN: Token for Copilot API"
+    echo "   - CONTEXT7_API_KEY: (Optional) Context7 API key"
+    echo ""
+    echo "2. Ensure your self-hosted runner has GitHub CLI installed:"
+    echo "   curl -L https://github.com/cli/cli/releases/download/v2.62.0/gh_2.62.0_linux_amd64.tar.gz -o /tmp/gh.tar.gz"
+    echo "   tar -xzf /tmp/gh.tar.gz -C /tmp"
+    echo "   sudo mv /tmp/gh_2.62.0_linux_amd64/bin/gh /usr/local/bin/"
+    echo ""
+    echo -e "${GREEN}Done!${NC}"
+    exit 0
+fi
+
+# For existing repos: push feature branch and create PR
 git push -u origin "$BRANCH_NAME"
 
 echo ""

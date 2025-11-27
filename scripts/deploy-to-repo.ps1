@@ -129,11 +129,27 @@ try {
     git config user.name "GitHub Copilot Setup"
     git config user.email "copilot-setup@$GhesHost"
     
+    # Check if repo is empty (no commits yet)
+    $IsEmptyRepo = $false
+    git rev-parse HEAD 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        $IsEmptyRepo = $true
+        Write-Warning "Empty repository detected - will initialize with main branch"
+    }
+    
     # Create branch for deployment
     $BranchName = "setup/copilot-workflows"
-    git checkout -b $BranchName 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        git checkout $BranchName
+    
+    if ($IsEmptyRepo) {
+        # For empty repos, create the main branch
+        git checkout -b main 2>$null
+    }
+    else {
+        # For existing repos, create feature branch
+        git checkout -b $BranchName 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            git checkout $BranchName
+        }
     }
     
     Write-Step "Creating directory structure..."
@@ -185,6 +201,38 @@ Prerequisites:
     git commit -m $CommitMessage
     
     Write-Step "Pushing branch..."
+    
+    if ($IsEmptyRepo) {
+        # For empty repos: just push main directly (no PR needed)
+        Write-Warning "Initializing main branch..."
+        git push -u origin main
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to push main branch"
+        }
+        
+        Write-Host ""
+        Write-ColorOutput "============================================================================" "Green"
+        Write-ColorOutput "  ✅ Deployment Complete (Empty Repository Initialized)!" "Green"
+        Write-ColorOutput "============================================================================" "Green"
+        Write-Host ""
+        Write-Host "Workflows committed directly to main branch: " -NoNewline
+        Write-ColorOutput "https://$GhesHost/$Owner/$Repo" "Cyan"
+        Write-Host ""
+        Write-ColorOutput "⚠️  Next Steps:" "Yellow"
+        Write-Host ""
+        Write-Host "1. Add these secrets to the organization or repository:"
+        Write-Host "   - GH_TOKEN: Classic PAT with repo, workflow scopes (from GHES)"
+        Write-Host "   - COPILOT_TOKEN: Token for Copilot API"
+        Write-Host "   - CONTEXT7_API_KEY: (Optional) Context7 API key"
+        Write-Host ""
+        Write-Host "2. Ensure your self-hosted runner has GitHub CLI installed:"
+        Write-Host "   See: https://cli.github.com/manual/installation"
+        Write-Host ""
+        Write-ColorOutput "Done!" "Green"
+        return
+    }
+    
+    # For existing repos: push feature branch and create PR
     git push -u origin $BranchName
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to push branch"

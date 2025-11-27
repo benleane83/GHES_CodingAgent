@@ -100,6 +100,13 @@ jobs:
           gh issue edit ${{ env.ISSUE_NUMBER }} \
             --add-label "in-progress" \
             --remove-label "copilot"
+          
+          # Add comment to notify that Copilot is working on this issue
+          COMMENT="## 🤖 Copilot is on it!
+          
+          Copilot has been assigned to work on this issue. You can view progress under [GitHub Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}), and once completed a PR will be linked here."
+          
+          gh issue comment "${{ env.ISSUE_NUMBER }}" --body "${COMMENT}"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
       
