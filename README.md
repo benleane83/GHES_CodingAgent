@@ -173,7 +173,7 @@ After cloning to your org, configure the `GHES_CodingAgent` repository:
    - Go to **Settings → Actions → General**
    - Under "Access", select **"Accessible from repositories in the organization"**
    
-2. **Add Repository Secrets**
+2. **Add Organization Secrets**
    - `GH_TOKEN`: Classic PAT with `repo` and `workflow` scopes
    - `COPILOT_TOKEN`: Token for Copilot API access
    - `CONTEXT7_API_KEY`: (Optional) Context7 API key
@@ -482,16 +482,6 @@ Edit `.github/copilot-instructions.md` to customize Copilot's behavior:
 - Specify frameworks or libraries to use
 - Add security or compliance requirements
 
-## 📊 Workflow Execution
-
-### Typical Execution Time
-
-- ⏱️ **Setup** (1-2 minutes): Install dependencies (cached after first run)
-- 🤖 **Code Generation** (2-5 minutes): Copilot generates code
-- 📬 **PR Creation** (<1 minute): Create and link PR
-
-**Total**: ~3-8 minutes depending on task complexity
-
 ### Logs and Artifacts
 
 Each workflow run publishes:
@@ -505,35 +495,6 @@ Access artifacts:
 3. Scroll to Artifacts section
 4. Download `copilot-logs`
 
-## 🎯 Use Cases
-
-### ✅ Perfect For
-
-- Creating new features from scratch
-- Implementing API endpoints
-- Writing utility functions
-- Setting up new projects
-- Creating boilerplate code
-- Implementing well-defined algorithms
-- Converting specifications to code
-
-### ⚠️ Consider Manual Review For
-
-- Complex architectural changes
-- Security-critical code
-- Performance-sensitive code
-- Legacy code refactoring
-- Cross-cutting concerns
-
-## 🔒 Security
-
-### Token Security
-
-- ✅ **Never commit tokens** to repository
-- ✅ Use **GitHub Secrets** for all sensitive data
-- ✅ Rotate tokens regularly
-- ✅ Use minimum required permissions
-
 ### Workflow Permissions
 
 ```yaml
@@ -543,16 +504,7 @@ permissions:
   pull-requests: write   # Create pull requests
 ```
 
-### Code Review
-
-- 🔍 **Always review** generated code before merging
-- 🧪 **Test thoroughly** in development environment
-- 🛡️ **Run security scans** on generated code
-- 📖 **Verify documentation** is accurate
-
 ## 📚 Documentation
-
-Detailed guides are available in the `docs/` directory:
 
 Detailed guides are available in the `docs/` directory:
 
@@ -572,7 +524,7 @@ Detailed guides are available in the `docs/` directory:
 
 ### Authentication Errors
 
-- ✅ Verify `GH_TOKEN` is set in repository secrets
+- ✅ Verify `GH_TOKEN` is set in organization or repository secrets
 - ✅ Check token scopes (`repo`, `copilot_requests`)
 - ✅ Ensure token is from GHES, not GitHub.com
 
@@ -584,56 +536,10 @@ Detailed guides are available in the `docs/` directory:
 
 For more troubleshooting help, see **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)**.
 
-## 📈 Monitoring
-
-### Workflow Success Rate
-
-Monitor workflow runs in the Actions tab:
-
-```bash
-# List recent workflow runs
-gh run list --workflow=copilot-coder.yml --limit 10
-
-# View specific run
-gh run view <run-id> --log
-```
-
-### Performance Metrics
-
-Track these metrics for your workflow:
-
-- ⏱️ Average execution time
-- ✅ Success rate
-- 📊 Cache hit rate
-- 🔄 Retry rate
-
-## 🤝 Contributing
-
-Contributions are welcome! To contribute:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is provided as-is for educational and reference purposes.
-
 ## 🙏 Acknowledgments
 
-- **GitHub Copilot team** - For the amazing Copilot CLI
-- **MCP community** - For the Model Context Protocol
-- **Context7** - For documentation services
-- **Original ADO implementation** - By [0GiS0](https://github.com/0GiS0)
-
-## 📞 Support
-
-- 📖 **Documentation**: Check `docs/` directory
-- 🐛 **Issues**: Create an issue in this repository
-- 💬 **Discussions**: Use GitHub Discussions
-- 📧 **Contact**: See repository maintainers
+- **GitHub Copilot team** - For the Copilot CLI
+- **Original ADO implementation** - By the amazing  [Gisela Torres - 0GiS0](https://github.com/0GiS0)
 
 ---
 

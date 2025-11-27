@@ -180,46 +180,6 @@ Allow: copilot-api.github.com:443
 Allow: <your-ghes-host>:443
 ```
 
-## 📊 Performance
-
-### Typical Execution Time
-
-| Phase | Duration |
-|-------|----------|
-| Setup & Cache | 30-60 seconds |
-| Download Files | 30-90 seconds |
-| Copilot Analysis | 1-3 minutes |
-| Post Comments | 30-60 seconds |
-| **Total** | **2-5 minutes** |
-
-*Times depend on PR size and Copilot server load*
-
-### Cache Performance
-
-After first run:
-- ✅ Copilot CLI cached (~100MB)
-- ✅ Dependencies cached
-- 📉 Subsequent runs: ~30-50% faster
-
-## 🎯 Use Cases
-
-### ✅ Best For
-
-- Automated code quality checks
-- Security vulnerability detection
-- Performance issue identification
-- Best practices enforcement
-- New developer code review
-- CI/CD quality gate
-
-### ⚠️ Limitations
-
-- Cannot review architecture decisions
-- Cannot verify business logic correctness
-- Limited context (doesn't see full codebase)
-- Should not be the sole review method
-- Requires human review for security-critical code
-
 ## 🔒 Security Considerations
 
 ### Token Management
@@ -235,14 +195,6 @@ After first run:
 - 🔍 File content sent to Copilot API for analysis
 - 🔍 Comments stored in GitHub PR
 - 🔒 Ensure Copilot API access is authorized
-
-### Best Practices
-
-1. **Always review Copilot findings** - It's a tool, not infallible
-2. **Don't merge without human review** - AI complements, doesn't replace
-3. **Configure appropriate model** - Balance cost vs. quality
-4. **Monitor for false positives** - Report patterns to Copilot team
-5. **Rotate credentials regularly** - Follow security policies
 
 ## 🐛 Troubleshooting
 
@@ -305,73 +257,6 @@ After first run:
 3. Check runner load/resources
 4. Verify network connectivity
 
-## 📈 Monitoring
-
-### View Workflow Runs
-
-```bash
-# List recent PR reviews
-gh run list --workflow=copilot-reviewer.yml --limit 20
-
-# View specific run
-gh run view <run-id>
-
-# Check run logs
-gh run view <run-id> --log
-```
-
-### Track Metrics
-
-Monitor these KPIs:
-
-- ⏱️ **Execution Time**: Target < 5 minutes
-- ✅ **Success Rate**: Target > 95%
-- 💬 **Comments/PR**: Issues found per PR
-- 🔄 **Cache Hit Rate**: Should improve over time
-
-## 🔄 Integration with Coder Workflow
-
-This reviewer workflow integrates with the Copilot Coder workflow:
-
-```
-Issue Created
-     ↓
-Label: "copilot" added to issue
-     ↓
-Coder Workflow: Generates code
-     ↓
-PR Created
-     ↓
-Developer: Adds "copilot" label to PR (optional)
-     ↓
-Reviewer Workflow: Reviews generated code
-     ↓
-Developer: Merges if approved
-```
-
-Both workflows use:
-- Same GitHub Actions environment
-- Same Copilot CLI installation
-- Cache sharing for performance
-
-## 📚 Advanced Usage
-
-### Customizing Analysis
-
-The analysis logic is embedded in the master workflow (`copilot-reviewer-master.yml`) in the `GHES_CodingAgent` repository. To customize:
-
-1. Edit the master workflow in the central repository
-2. Changes apply to all repositories using the workflow
-
-### Integration with Branch Protection
-
-Configure branch protection rule:
-
-1. Go to Settings → Branches
-2. Add branch protection rule for target branch
-3. Require "Copilot PR Reviewer" status check
-4. This makes review optional or required based on status
-
 ## 🤝 Troubleshooting & Support
 
 ### Check Logs
@@ -380,15 +265,6 @@ Configure branch protection rule:
 2. Select workflow run
 3. Click specific step to see logs
 4. Look for error messages
-
-### Enable Debug Logging
-
-Add to workflow step:
-
-```yaml
-- name: Enable Debug
-  run: set -x
-```
 
 ### Common Issues
 
@@ -405,16 +281,6 @@ See [main TROUBLESHOOTING.md](TROUBLESHOOTING.md) for:
 - [Copilot Coder Workflow](../README.md#-github-copilot-coder) - Code generation
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [GitHub API Reference](https://docs.github.com/en/rest)
-
-## 📄 License
-
-This workflow is provided as-is for use with GitHub Enterprise Server.
-
-## 🙏 Acknowledgments
-
-- Original ADO Reviewer Agent by [0GiS0](https://github.com/0GiS0)
-- GitHub Copilot team for excellent AI capabilities
-- GitHub Actions team for workflow infrastructure
 
 ---
 

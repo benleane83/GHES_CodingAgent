@@ -336,7 +336,6 @@ jobs:
             --body-file /tmp/pr_body.txt \
             --base main \
             --head "${BRANCH_NAME}" \
-            --label "copilot" \
             --assignee "${ISSUE_CREATOR}")
           
           # Clean up
