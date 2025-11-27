@@ -276,10 +276,10 @@ jobs:
                   
                   if [ -s "$OUTPUT_DIR/source/$filepath" ]; then
                       echo "  ✅ Downloaded"
-                      ((SUCCESSFUL++))
+                      SUCCESSFUL=$((SUCCESSFUL + 1))
                   else
                       echo "  ⚠️  Could not download"
-                      ((FAILED++))
+                      FAILED=$((FAILED + 1))
                   fi
               fi
           done < "/tmp/pr_files_$$.txt"
@@ -439,10 +439,10 @@ jobs:
               
               if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
                   echo "  ✅ Posted successfully"
-                  ((SUCCESSFUL++))
+                  SUCCESSFUL=$((SUCCESSFUL + 1))
               else
                   echo "  ❌ Failed (HTTP $HTTP_CODE)"
-                  ((FAILED++))
+                  FAILED=$((FAILED + 1))
               fi
               
               sleep 1
