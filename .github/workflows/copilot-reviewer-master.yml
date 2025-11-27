@@ -10,9 +10,9 @@ name: 🤖 Copilot PR Reviewer (Master)
 #       secrets: inherit
 
 on:
-  # Direct trigger (for this repository)
+  # Direct trigger (for this repository) - only on 'copilot' label
   pull_request:
-    types: [opened, synchronize, labeled]
+    types: [labeled]
     branches:
       - main
       - develop
@@ -49,9 +49,8 @@ jobs:
   review:
     runs-on: self-hosted
     name: 🤖 Analyze PR and Generate Review
-    if: |
-      github.event.action != 'labeled' || 
-      contains(github.event.pull_request.labels.*.name, 'copilot')
+    # Only run when the 'copilot' label is added
+    if: github.event.label.name == 'copilot'
     
     steps:
       - name: 📋 Show PR Information

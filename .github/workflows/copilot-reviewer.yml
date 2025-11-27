@@ -19,7 +19,7 @@ name: 🤖 Copilot PR Reviewer
 
 on:
   pull_request:
-    types: [opened, synchronize, labeled]
+    types: [labeled]
     branches:
       - main
       - develop
@@ -27,10 +27,8 @@ on:
 
 jobs:
   review:
-    # Skip if labeled event and label is not 'copilot'
-    if: |
-      github.event.action != 'labeled' || 
-      contains(github.event.pull_request.labels.*.name, 'copilot')
+    # Only run when the 'copilot' label is added
+    if: github.event.label.name == 'copilot'
     
     # Call the master workflow from the central repository
     # Replace <org> with your GHES organization name
