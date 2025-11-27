@@ -211,7 +211,6 @@ This PR adds the GitHub Copilot Coder and Reviewer workflows to this repository.
 |------|-------------|
 | ``.github/workflows/copilot-coder.yml`` | Caller workflow for code generation |
 | ``.github/workflows/copilot-reviewer.yml`` | Caller workflow for PR reviews |
-| ``.github/copilot-instructions.md`` | Instructions for Copilot CLI |
 | ``mcp-config.json`` | MCP server configuration |
 
 ### ✨ Reusable Workflow Architecture
@@ -223,7 +222,7 @@ $Owner/GHES_CodingAgent
 
 ### ⚠️ Required Setup (Before Merging)
 
-#### 1. Configure Repository Secrets
+#### 1. Configure Organization or Repository Secrets
 
 Go to **Settings → Secrets and variables → Actions** and add:
 
@@ -282,7 +281,7 @@ Your runner must have these tools pre-installed:
     Write-Host ""
     Write-Host "1. Review and merge the PR"
     Write-Host ""
-    Write-Host "2. Add these secrets to the repository:"
+    Write-Host "2. Add these secrets to the organization or repository:"
     Write-Host "   - GH_TOKEN: Classic PAT with repo, workflow scopes (from GHES)"
     Write-Host "   - COPILOT_TOKEN: Token for Copilot API"
     Write-Host "   - CONTEXT7_API_KEY: (Optional) Context7 API key"

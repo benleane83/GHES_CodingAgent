@@ -165,7 +165,6 @@ This PR adds the GitHub Copilot Coder and Reviewer workflows to this repository.
 |------|-------------|
 | \`.github/workflows/copilot-coder.yml\` | Caller workflow for code generation |
 | \`.github/workflows/copilot-reviewer.yml\` | Caller workflow for PR reviews |
-| \`.github/copilot-instructions.md\` | Instructions for Copilot CLI |
 | \`mcp-config.json\` | MCP server configuration |
 
 ### ✨ Reusable Workflow Architecture

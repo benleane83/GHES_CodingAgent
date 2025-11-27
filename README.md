@@ -57,7 +57,7 @@ See [GHES Setup Guide - Self-Hosted Runners](docs/GHES-SETUP.md#self-hosted-runn
 
 ---
 
-1. **Configure Repository Secrets**
+1. **Configure Organization or Repository Secrets**
    
    Go to **Settings** → **Secrets and variables** → **Actions**:
    
@@ -210,7 +210,6 @@ The scripts deploy **lightweight caller workflows** to target repositories:
 |------|------|-------------|
 | `.github/workflows/copilot-coder.yml` | ~30 lines | Calls master coder workflow |
 | `.github/workflows/copilot-reviewer.yml` | ~35 lines | Calls master reviewer workflow |
-| `.github/copilot-instructions.md` | ~3KB | Instructions for Copilot CLI |
 | `mcp-config.json` | ~500B | MCP server configuration |
 
 **No `scripts/` folder is copied!** The master workflows in `GHES_CodingAgent` contain all the logic.
@@ -346,7 +345,6 @@ Update Labels (completed, ready-for-review)
 │   ├── copilot-coder.yml           # Caller workflow (lightweight)
 │   ├── copilot-reviewer-master.yml # Master workflow (reusable) - full logic
 │   └── copilot-reviewer.yml        # Caller workflow (lightweight)
-└── copilot-instructions.md         # Instructions for Copilot CLI
 
 scripts/
 ├── deploy-to-repo.ps1            # Deploy to target repo (PowerShell)
