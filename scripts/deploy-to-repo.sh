@@ -94,9 +94,8 @@ sed "s|ghes-test/GHES_CodingAgent|${OWNER}/GHES_CodingAgent|g" \
 sed "s|ghes-test/GHES_CodingAgent|${OWNER}/GHES_CodingAgent|g" \
     "$SOURCE_DIR/.github/workflows/copilot-reviewer.yml" > .github/workflows/copilot-reviewer.yml
 
-# Copy MCP config (needed for Copilot CLI to find MCP servers)
-echo -e "${GREEN}  ✓ Copying MCP configuration...${NC}"
-cp "$SOURCE_DIR/mcp-config.json" .
+# Note: mcp-config.json is fetched at runtime from GHES_CodingAgent repository
+# No need to deploy it to each target repository
 
 echo ""
 echo -e "${YELLOW}📝 Creating labels...${NC}"
@@ -133,11 +132,11 @@ in ${OWNER}/GHES_CodingAgent repository.
 Files added:
 - .github/workflows/copilot-coder.yml (caller workflow)
 - .github/workflows/copilot-reviewer.yml (caller workflow)
-- .github/copilot-instructions.md (Copilot CLI instructions)
-- mcp-config.json (MCP server configuration)
+
+Note: MCP configuration is fetched at runtime from GHES_CodingAgent.
 
 Benefits of reusable workflows:
-- No scripts folder needed in this repository
+- No scripts or config files needed in this repository
 - Automatic updates when master workflow is improved
 - Consistent behavior across all repositories
 
@@ -165,7 +164,8 @@ This PR adds the GitHub Copilot Coder and Reviewer workflows to this repository.
 |------|-------------|
 | \`.github/workflows/copilot-coder.yml\` | Caller workflow for code generation |
 | \`.github/workflows/copilot-reviewer.yml\` | Caller workflow for PR reviews |
-| \`mcp-config.json\` | MCP server configuration |
+
+> **Note:** MCP configuration is fetched at runtime from \`${OWNER}/GHES_CodingAgent\` - no config files needed in this repository!
 
 ### ✨ Reusable Workflow Architecture
 

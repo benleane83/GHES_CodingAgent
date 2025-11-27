@@ -150,9 +150,33 @@ jobs:
       - name: ⚙️ Configure MCP Servers
         run: |
           mkdir -p ~/.config
-          cp mcp-config.json ~/.config/mcp-config.json
-          echo "✅ MCP configuration copied to ~/.config/mcp-config.json"
-          cat ~/.config/mcp-config.json
+          
+          # Fetch mcp-config.json from the central GHES_CodingAgent repository
+          echo "📥 Fetching MCP configuration from GHES_CodingAgent..."
+          GHES_HOST=$(echo "${{ github.server_url }}" | sed 's|https://||')
+          OWNER="${{ github.repository_owner }}"
+          
+          # Determine API base URL
+          if [[ "$GHES_HOST" == "github.com" ]]; then
+              API_BASE="https://api.github.com"
+          else
+              API_BASE="https://$GHES_HOST/api/v3"
+          fi
+          
+          # Download mcp-config.json from GHES_CodingAgent repo
+          curl -s \
+              -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3.raw" \
+              "$API_BASE/repos/$OWNER/GHES_CodingAgent/contents/mcp-config.json" \
+              > ~/.config/mcp-config.json
+          
+          if [ -s ~/.config/mcp-config.json ]; then
+              echo "✅ MCP configuration downloaded to ~/.config/mcp-config.json"
+              cat ~/.config/mcp-config.json
+          else
+              echo "❌ Failed to download MCP configuration"
+              exit 1
+          fi
       
       - name: 🧰 Check MCP Access
         run: |
