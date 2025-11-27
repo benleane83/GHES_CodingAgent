@@ -301,23 +301,18 @@ env:
 
 ### 4. Test Scripts Locally
 
-Test scripts on your local machine:
+> **Note:** Scripts are only used for deployment (`deploy-to-repo.ps1` / `deploy-to-repo.sh`). All workflow logic is embedded in the master workflows, so there are no scripts to test for workflow debugging.
+
+Test deployment scripts:
+
+```powershell
+# Test deploy-to-repo.ps1 (PowerShell)
+.\scripts\deploy-to-repo.ps1 -GhesHost "ghes.example.com" -Owner "myorg" -Repo "test-repo" -GhToken "ghp_xxx"
+```
 
 ```bash
-# Test prepare-commit.sh
-./scripts/prepare-commit.sh 123 "Test Issue" "testuser"
-
-# Test push-branch.sh
-export GH_TOKEN="your-token"
-./scripts/push-branch.sh "copilot/123"
-
-# Test update-issue-labels.sh
-export GH_TOKEN="your-token"
-./scripts/update-issue-labels.sh 123 "add" "in-progress"
-
-# Test post-workflow-comment.sh
-export GH_TOKEN="your-token"
-./scripts/post-workflow-comment.sh 123 "https://github.com/user/repo/pull/1"
+# Test deploy-to-repo.sh (Bash)
+./scripts/deploy-to-repo.sh ghes.example.com myorg test-repo ghp_xxx
 ```
 
 ### 5. Verify Repository Configuration

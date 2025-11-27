@@ -15,7 +15,7 @@ This guide explains how to set up the GitHub Copilot Coder workflow on GitHub En
 - Ability to create GitHub Actions workflows
 - Ability to configure repository secrets
 
-## 🔐 Step 1: Configure Repository Secrets
+## 🔐 Step 1: Configure Organization or Repository Secrets
 
 Navigate to your repository **Settings** → **Secrets and variables** → **Actions** and add the following secrets:
 
@@ -67,13 +67,22 @@ You can customize the workflow by editing these environment variables:
 - **`COPILOT_VERSION`**: Pin to a specific Copilot CLI version
 - **`NPM_GLOBAL_PATH`**: Customize NPM global package path (auto-detected)
 
-## 🎯 Step 3: Configure MCP Servers (Optional)
+## 🎯 Step 3: Understand MCP Server Configuration
 
-The workflow uses MCP (Model Context Protocol) servers for enhanced functionality.
+The workflow uses MCP (Model Context Protocol) servers for enhanced functionality like documentation lookup and web content retrieval.
 
-### Default MCP Configuration
+### How MCP Configuration Works
 
-The file `mcp-config.json` in the repository root configures:
+**Important:** MCP configuration is fetched automatically at runtime from the central `GHES_CodingAgent` repository. You do not need to:
+- ❌ Edit any local `mcp-config.json` file
+- ❌ Deploy MCP configuration to target repositories
+- ❌ Manually configure MCP servers
+
+The master workflow automatically downloads the latest `mcp-config.json` from the central repository during execution, ensuring all repositories use consistent, up-to-date MCP settings.
+
+### Default MCP Servers
+
+The centrally managed configuration includes:
 
 1. **Context7**: Documentation and code examples
 2. **Fetch**: Web content retrieval
@@ -81,25 +90,10 @@ The file `mcp-config.json` in the repository root configures:
 
 ### Customizing MCP Servers
 
-Edit `mcp-config.json` to add or remove MCP servers:
+To modify MCP configuration for all repositories:
 
-```json
-{
-  "mcpServers": {
-    "context7": {
-      "type": "local",
-      "command": "npx",
-      "tools": ["*"],
-      "args": ["-y", "@upstash/context7-mcp"]
-    },
-    "fetch": {
-      "type": "local",
-      "command": "uvx",
-      "tools": ["*"],
-      "args": ["mcp-server-fetch"]
-    }
-  }
-}
+1. Edit `mcp-config.json` in the `GHES_CodingAgent` repository
+2. Changes apply automatically to all subsequent workflow runs
 ```
 
 ## 📝 Step 4: Create Issues for Copilot
@@ -146,7 +140,7 @@ The workflow executes the following steps:
 5. 📦 Install uv/uvx
 6. ⚙️ Setup Node.js
 7. 📦 Install Copilot CLI (with caching)
-8. ⚙️ Configure MCP Servers
+8. ⚙️ Configure MCP Servers (fetched from central repo)
 9. 🧰 Check MCP Access
 10. 🌿 Create Feature Branch
 11. 🤖 Implement Changes with Copilot

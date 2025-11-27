@@ -25,7 +25,7 @@ This repository implements an automated coding workflow using **GitHub Copilot C
 - 🔄 **MCP integration** - Uses Context7 for documentation and best practices
 
 #### 🔍 Copilot PR Reviewer
-- 💬 **Automatic PR reviews** - Reviews code on every PR open/update
+- 🏷️ **Label-triggered PR reviews** - Add `copilot` label to trigger review
 - 🔒 **Security analysis** - Detects security vulnerabilities
 - ⚡ **Performance checks** - Identifies performance issues
 - 🧹 **Code quality** - Flags code quality concerns
@@ -116,7 +116,7 @@ The workflow will automatically:
 ### 5️⃣ Review and Merge
 
 1. Review the Pull Request
-2. **Copilot Reviewer automatically analyzes the code** ✨
+2. **Add `copilot` label to PR for AI review** (optional) ✨
 3. Test the implementation
 4. Approve and merge when ready
 
@@ -134,10 +134,10 @@ This section explains how to deploy the Copilot workflows to repositories in you
 │  │   GHES_CodingAgent      │      │     Target Repository           │  │
 │  │   (Central/Master)      │      │     (e.g., my-project)          │  │
 │  │                         │      │                                 │  │
-│  │  • Master workflows     │      │  • Caller workflows (tiny)      │  │
-│  │  • All scripts          │◄─────│  • copilot-instructions.md      │  │
-│  │  • Documentation        │      │  • mcp-config.json              │  │
-│  │                         │ uses │                                 │  │
+│  │  • Master workflows     │      │  • Caller workflows only (2)    │  │
+│  │  • MCP configuration    │◄─────│                                 │  │
+│  │  • Documentation        │      │  (fetches config at runtime)    │  │
+│  │  • Deploy scripts       │ uses │                                 │  │
 │  └─────────────────────────┘      └─────────────────────────────────┘  │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -210,9 +210,6 @@ The scripts deploy **lightweight caller workflows** to target repositories:
 |------|------|-------------|
 | `.github/workflows/copilot-coder.yml` | ~30 lines | Calls master coder workflow |
 | `.github/workflows/copilot-reviewer.yml` | ~35 lines | Calls master reviewer workflow |
-| `mcp-config.json` | ~500B | MCP server configuration |
-
-**No `scripts/` folder is copied!** The master workflows in `GHES_CodingAgent` contain all the logic.
 
 ### Step 4️⃣: Configure Target Repository Secrets
 
@@ -240,11 +237,11 @@ After merging the deployment PR, add secrets to the target repository:
 | **Easy Rollout** | Deploy to new repos in seconds |
 | **Version Control** | Pin to specific tags/commits if needed |
 
-## 🤖 Copilot PR Reviewer (Automatic)
+## 🤖 Copilot PR Reviewer (On-Demand)
 
-The **Copilot PR Reviewer** automatically analyzes every pull request:
+The **Copilot PR Reviewer** analyzes pull requests when triggered:
 
-- 🔄 **Triggers on every PR** - Open or update
+- 🏷️ **Triggers when `copilot` label is added** - Add label to request review
 - 🔍 **Analyzes all changed files** - Security, performance, code quality
 - 💬 **Posts review comments** - With actionable recommendations
 - 📊 **Generates analysis report** - Available as artifact
@@ -252,15 +249,15 @@ The **Copilot PR Reviewer** automatically analyzes every pull request:
 ### Review Process
 
 ```
-PR Opened/Updated
+Developer adds 'copilot' label to PR
          ↓
-Reviewer Workflow Triggers (Automatic)
+Reviewer Workflow Triggers
          ↓
 1️⃣ Download Changed Files
 2️⃣ Run Copilot Analysis
 3️⃣ Post Review Comments
          ↓
-� Feedback Ready for Developer
+📝 Feedback Ready for Developer
 ```
 
 ### Example Review Output
@@ -272,35 +269,33 @@ Copilot identifies and comments on issues like:
 - 🧹 **Code Quality**: Naming, documentation, complexity, error handling
 - 📝 **Best Practices**: Type safety, error handling, edge cases
 
-**No action required!** The reviewer workflow runs automatically on every PR. Just merge your code after addressing the findings.
+**To request a review:** Add the `copilot` label to the PR. The reviewer workflow will analyze your code and post feedback.
 
 For detailed information, see [Copilot PR Reviewer Documentation](docs/COPILOT-REVIEWER.md).
 
-## �🎯 How It Works
+## 🎯 How It Works
 
 ### Coder Workflow Trigger
 
 ```yaml
 on:
   issues:
-    types: [opened, labeled]
+    types: [labeled]
 ```
 
 The coder workflow triggers when:
-- An issue is opened with the `copilot` label
-- The `copilot` label is added to an existing issue
+- The `copilot` label is added to an issue
 
 ### Reviewer Workflow Trigger
 
 ```yaml
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [labeled]
 ```
 
 The reviewer workflow triggers when:
-- A pull request is opened
-- A pull request is updated (new commits)
+- The `copilot` label is added to a pull request
 
 ### Architecture
 
@@ -338,34 +333,41 @@ Update Labels (completed, ready-for-review)
 
 ## 📦 Repository Structure
 
+### Central Repository (GHES_CodingAgent)
+
 ```
 .github/
 ├── workflows/
 │   ├── copilot-coder-master.yml    # Master workflow (reusable) - full logic
-│   ├── copilot-coder.yml           # Caller workflow (lightweight)
+│   ├── copilot-coder.yml           # Caller workflow (example/reference)
 │   ├── copilot-reviewer-master.yml # Master workflow (reusable) - full logic
-│   └── copilot-reviewer.yml        # Caller workflow (lightweight)
+│   └── copilot-reviewer.yml        # Caller workflow (example/reference)
 
-scripts/
-├── deploy-to-repo.ps1            # Deploy to target repo (PowerShell)
-├── deploy-to-repo.sh             # Deploy to target repo (Bash)
-├── prepare-commit.sh             # Prepare commit with co-author
-├── push-branch.sh                # Push branch to remote
-├── post-workflow-comment.sh      # Post completion comment
-├── get-pr-diff.sh                # Get PR file changes (reviewer)
-├── download-pr-files.sh          # Download changed files (reviewer)
-├── analyze-with-copilot.sh       # Run AI analysis (reviewer)
-└── post-pr-comment.sh            # Post review comments (reviewer)
+scripts/                            # Scripts for deployment only (NOT deployed to targets)
+├── deploy-to-repo.ps1              # Deploy to target repo (PowerShell)
+├── deploy-to-repo.sh               # Deploy to target repo (Bash)
+└── README.md                       # Script documentation
 
 docs/
-├── GHES-SETUP.md                # Detailed setup guide
-├── DEPLOYMENT.md                # Deployment guide
-├── COPILOT-REVIEWER.md          # PR Reviewer documentation
-├── TROUBLESHOOTING.md           # Common issues and solutions
-└── ...                          # Other documentation
+├── GHES-SETUP.md                   # Detailed setup guide
+├── DEPLOYMENT.md                   # Deployment guide
+├── COPILOT-REVIEWER.md             # PR Reviewer documentation
+├── TROUBLESHOOTING.md              # Common issues and solutions
+└── ...                             # Other documentation
 
-mcp-config.json                  # MCP servers configuration
+mcp-config.json                     # MCP servers configuration (fetched at runtime)
 ```
+
+### Target Repositories (After Deployment)
+
+```
+.github/
+└── workflows/
+    ├── copilot-coder.yml           # Caller workflow (~30 lines)
+    └── copilot-reviewer.yml        # Caller workflow (~35 lines)
+```
+
+> **Note:** Target repositories receive ONLY the caller workflows. All logic is in the master workflows, and MCP configuration is fetched at runtime from the central repository.
 
 ### Master vs Caller Workflows
 

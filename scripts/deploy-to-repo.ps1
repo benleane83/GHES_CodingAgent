@@ -151,9 +151,6 @@ try {
     $ReviewerContent = $ReviewerContent -replace "ghes-test/GHES_CodingAgent", "$Owner/GHES_CodingAgent"
     Set-Content -Path ".github/workflows/copilot-reviewer.yml" -Value $ReviewerContent
     
-    # Note: mcp-config.json is fetched at runtime from GHES_CodingAgent repository
-    # No need to deploy it to each target repository
-    
     Write-Step "Creating labels..."
     
     Create-Label -Name "copilot" -Color "7057ff" -Description "Trigger the Copilot CLI agent" -GhesHostname $GhesHost
@@ -172,8 +169,6 @@ in $Owner/GHES_CodingAgent repository.
 Files added:
 - .github/workflows/copilot-coder.yml (caller workflow)
 - .github/workflows/copilot-reviewer.yml (caller workflow)
-
-Note: MCP configuration is fetched at runtime from GHES_CodingAgent.
 
 Benefits of reusable workflows:
 - No scripts or config files needed in this repository
@@ -209,8 +204,6 @@ This PR adds the GitHub Copilot Coder and Reviewer workflows to this repository.
 | ``.github/workflows/copilot-coder.yml`` | Caller workflow for code generation |
 | ``.github/workflows/copilot-reviewer.yml`` | Caller workflow for PR reviews |
 
-> **Note:** MCP configuration is fetched at runtime from ``$Owner/GHES_CodingAgent`` - no config files needed in this repository!
-
 ### ✨ Reusable Workflow Architecture
 
 These are **lightweight caller workflows** that invoke the master workflows from:
@@ -243,7 +236,7 @@ Your runner must have these tools pre-installed:
 3. Wait for Copilot to generate code and create a PR
 
 #### Copilot Reviewer
-- Automatically runs on every PR
+- Add the ``copilot`` label to a PR to trigger AI review
 - Posts review comments with findings
 "@
 

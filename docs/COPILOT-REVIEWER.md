@@ -8,7 +8,7 @@ This workflow automatically reviews pull requests using GitHub Copilot CLI and p
 
 ### ✨ Key Features
 
-- 🔄 **Automatic PR Review** - Triggers on PR open/sync automatically
+- 🏷️ **Label-Triggered Review** - Manually trigger by adding the `copilot` label
 - 🤖 **AI-powered Analysis** - GitHub Copilot CLI analyzes all changed files
 - 🐛 **Issue Detection** - Identifies security, performance, and code quality issues
 - 💬 **Auto Comments** - Posts review findings as PR comments
@@ -27,9 +27,10 @@ Ensure your GHES instance supports:
 
 ### 2️⃣ Enable the Workflow
 
-The workflow is **enabled by default**. It triggers automatically on:
-- Pull request opened
-- Pull request synchronized (new commits)
+The workflow triggers when you **add the `copilot` label** to a pull request:
+- Review is **on-demand** - it only runs when you explicitly request it
+- Add the `copilot` label to trigger an AI review
+- Remove and re-add the label to re-run the review after updates
 
 ### 3️⃣ Optional Configuration
 
@@ -50,19 +51,20 @@ Supported models:
 
 ### 4️⃣ Watch Reviews Appear
 
-When a PR is opened or updated:
+When the `copilot` label is added to a PR:
 
-1. 🔄 Workflow triggers automatically
-2. 🤖 Copilot analyzes changed files
-3. 💬 Review comments posted to PR
-4. 📊 Summary added to workflow run
+1. 🏷️ You add the `copilot` label to the PR
+2. 🔄 Workflow triggers
+3. 🤖 Copilot analyzes changed files
+4. 💬 Review comments posted to PR
+5. 📊 Summary added to workflow run
 
 ## 🏗️ Architecture
 
 ### Workflow Flow
 
 ```
-Pull Request Opened/Updated
+Add 'copilot' label to PR
          ↓
     Setup Environment
   (Node.js, Copilot CLI)
@@ -84,15 +86,6 @@ Upload Artifacts
          ↓
   ✅ Review Complete
 ```
-
-### Key Scripts
-
-| Script | Purpose |
-|--------|---------|
-| `scripts/get-pr-diff.sh` | Fetch list of changed files from PR |
-| `scripts/download-pr-files.sh` | Download file contents from both branches |
-| `scripts/analyze-with-copilot.sh` | Run Copilot CLI analysis |
-| `scripts/post-pr-comment.sh` | Post findings as PR review comments |
 
 ## 📁 Analysis Output
 
@@ -255,9 +248,10 @@ After first run:
 
 ### Workflow Not Triggering
 
-**Problem:** Workflow runs but doesn't analyze
+**Problem:** Workflow doesn't run when expected
 
 **Solution:**
+- ✅ Ensure you added the `copilot` label (workflow only triggers on label, not on PR open/sync)
 - Check `.github/workflows/copilot-reviewer.yml` is present
 - Verify workflow is enabled in Actions tab
 - Check branch is in `on.pull_request.branches`
@@ -342,11 +336,13 @@ This reviewer workflow integrates with the Copilot Coder workflow:
 ```
 Issue Created
      ↓
-Label: "copilot" added
+Label: "copilot" added to issue
      ↓
 Coder Workflow: Generates code
      ↓
 PR Created
+     ↓
+Developer: Adds "copilot" label to PR (optional)
      ↓
 Reviewer Workflow: Reviews generated code
      ↓
@@ -360,33 +356,12 @@ Both workflows use:
 
 ## 📚 Advanced Usage
 
-### Custom Analysis Prompts
+### Customizing Analysis
 
-To customize Copilot analysis, edit the prompt in `scripts/analyze-with-copilot.sh`:
+The analysis logic is embedded in the master workflow (`copilot-reviewer-master.yml`) in the `GHES_CodingAgent` repository. To customize:
 
-```bash
-# Find this section:
-ANALYSIS_PROMPT="Analyze ALL the files..."
-
-# Modify to add custom analysis rules:
-ANALYSIS_PROMPT="Analyze ALL the files with focus on:
-- Security vulnerabilities
-- Performance optimizations
-- TypeScript type safety
-- Error handling..."
-```
-
-### Filtering by File Type
-
-Modify `analyze-with-copilot.sh` to analyze only specific files:
-
-```bash
-# Instead of:
-FILES=($(find . -type f ! -path "*/pr-comments/*" ...))
-
-# Use:
-FILES=($(find . -type f -name "*.ts" -o -name "*.tsx" ...))
-```
+1. Edit the master workflow in the central repository
+2. Changes apply to all repositories using the workflow
 
 ### Integration with Branch Protection
 
