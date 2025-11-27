@@ -202,11 +202,14 @@ jobs:
           echo "✅ Branch ${{ env.BRANCH_NAME }} created"
       
       - name: 🤖 Implement Changes with Copilot
+        timeout-minutes: 30
+        working-directory: ${{ github.workspace }}
         run: |
           echo "🤖 Running GitHub Copilot CLI..."
           echo "═══════════════════════════════════════════════════════════"
           echo "📋 Issue: #${ISSUE_NUMBER}"
           echo "📌 Title: ${ISSUE_TITLE}"
+          echo "🗂️  Working Directory: $(pwd)"
           echo "═══════════════════════════════════════════════════════════"
           
           echo "This is the description that Copilot CLI is going to use to implement the task:"
@@ -218,7 +221,10 @@ jobs:
           printf '%s' "${ISSUE_BODY}" > /tmp/issue_description.txt
           
           # Run Copilot with file input
+          # Note: -p flag runs in non-interactive mode
+          # --add-dir allows Copilot to access files in the workspace directory
           copilot -p "Implement the GitHub issue following the description details: $(cat /tmp/issue_description.txt)" \
+            --add-dir "$(pwd)" \
             --allow-all-tools \
             --log-level all \
             --log-dir logs \
